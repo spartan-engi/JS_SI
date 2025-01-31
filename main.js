@@ -82,40 +82,48 @@ function main(){
 
 
 	// callbacks... not driving anything for now
-	let initial_pos = [-70,-70,-70];
-	let pos = []
-	pos[0] = initial_pos[0];
-	pos[1] = initial_pos[1];
-	pos[2] = initial_pos[2];
-	// add keyboard callback
 	const bodyElement = document.querySelector("body");
 	bodyElement.addEventListener("keydown", onKeyPress, false)
-	//keypress callback
+	bodyElement.addEventListener("keyup", onKeyRelease, false)
+	// key callback
 	function onKeyPress(event)
 	{
 		switch(event.key)
 		{
-			case 'd':	pos[0] += 32;		break;
-			case 'a':	pos[0] -= 32;		break;
-			case 'e':	pos[1] += 32;		break;
-			case 'q':	pos[1] -= 32;		break;
-			case 'w':	pos[2] += 32;		break;
-			case 's':	pos[2] -= 32;		break;
+			case 'd':	key_states['d'] = 1;	break;
+			case 'a':	key_states['a'] = 1;	break;
+			case 'e':	key_states['e'] = 1;	break;
+			case 'q':	key_states['q'] = 1;	break;
+			case 'w':	key_states['w'] = 1;	break;
+			case 's':	key_states['s'] = 1;	break;
 		}
-		print(pos);
+		// print(key_states);
 	}
-	// add click callback
-	canvas.addEventListener("mousedown", onMouseCick, false);
-	// click callback
-	function onMouseCick(event)
+	function onKeyRelease(event)
 	{
-		// x = event.offsetX;
-		// y = event.offsetY;
-		// console.log(x,y);
-		pos[0] = initial_pos[0];
-		pos[1] = initial_pos[1];
-		pos[2] = initial_pos[2];
+		switch(event.key)
+		{
+			case 'd':	key_states['d'] = 0;	break;
+			case 'a':	key_states['a'] = 0;	break;
+			case 'e':	key_states['e'] = 0;	break;
+			case 'q':	key_states['q'] = 0;	break;
+			case 'w':	key_states['w'] = 0;	break;
+			case 's':	key_states['s'] = 0;	break;
+		}
+		// print(key_states);
 	}
+	// // add click callback
+	// canvas.addEventListener("mousedown", onMouseCick, false);
+	// // click callback
+	// function onMouseCick(event)
+	// {
+	// 	// x = event.offsetX;
+	// 	// y = event.offsetY;
+	// 	// console.log(x,y);
+	// 	pos[0] = initial_pos[0];
+	// 	pos[1] = initial_pos[1];
+	// 	pos[2] = initial_pos[2];
+	// }
 
 
 
@@ -170,6 +178,16 @@ function main(){
 	
 }
 
+// keystates, read this instead of directly listening to the events
+let key_states = { 
+	'd' : 0,
+	'a' : 0,
+	'e' : 0,
+	'q' : 0,
+	'w' : 0,
+	's' : 0,
+}
+
 // this isn't the right place to declare the objects
 let cube_object = {
 	position : [-70,-70,-70],
@@ -180,6 +198,13 @@ let cube_object = {
 	},
 	process : function(delta)
 	{
+		mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
 		return;
 	},
 }
