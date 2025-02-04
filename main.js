@@ -112,18 +112,40 @@ function main(){
 		}
 		// print(key_states);
 	}
-	// // add click callback
-	// canvas.addEventListener("mousedown", onMouseCick, false);
-	// // click callback
-	// function onMouseCick(event)
-	// {
-	// 	// x = event.offsetX;
-	// 	// y = event.offsetY;
-	// 	// console.log(x,y);
-	// 	pos[0] = initial_pos[0];
-	// 	pos[1] = initial_pos[1];
-	// 	pos[2] = initial_pos[2];
-	// }
+	// add click callback
+	// canvas.addEventListener("mousedown", onMouseCick, false);	// as long as mouse is pressed
+	canvas.addEventListener("click", onMouseClick, false);	//only the frame that the mouse is pressed
+	// click callback
+	let pointerLock = 0;
+	async function onMouseClick(event)
+	{
+		// x = event.offsetX;
+		// y = event.offsetY;
+		// console.log(x,y);
+		// pos[0] = initial_pos[0];
+		// pos[1] = initial_pos[1];
+		// pos[2] = initial_pos[2];
+		if(pointerLock)
+		{
+			document.exitPointerLock();
+			print("unlock");
+			pointerLock = 0;
+		}
+		else
+		{
+			await canvas.requestPointerLock();
+			print("lock!");
+			pointerLock = 1;
+		}
+	}
+	// add mouse motion callback
+	document.addEventListener("mousemove", onMouseMove, false);
+	// mouse motion callback
+	function onMouseMove(event)
+	{
+		if(!pointerLock) return;
+		print([event.movementX, event.movementY]);
+	}
 
 
 
