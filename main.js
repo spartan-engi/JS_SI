@@ -136,7 +136,8 @@ function main(){
 	// vector of everything the game needs to keep track of
 	// push things in here and forget about them :D
 	let objects = [];
-	objects.push(cube_object, spin_object);
+	// objects.push(cube_object, spin_object);
+	objects.push(cat_object);
 	// todo: figure out how to clear the trash
 
 
@@ -664,6 +665,124 @@ function drawLine(context, transform, p1 = [0,0,0], p2 = [0,0,0], color = [0,0,0
 	context.drawArrays(context.LINES, 0, 2);
 }
 
+
+
+/* Models importation */
+
+// Need to pass in this format, Ex: " './fileName.bin' "
+async function loadObject(objectName){
+	try {
+        const file = await fetch(objectName);
+        const arrayBuffer = await file.arrayBuffer();
+        return arrayBuffer;
+    } catch (error) {
+        console.error('Error loading object:', error);
+        throw error;
+    }
+}
+
+// For model object imported
+let cat_object = {
+	position : [-70,-70,-70],
+	ang : 0.0,
+	draw : async function(context)
+	{
+		await drawModel(context, mat4Transform(this.position), './cat.bin');
+		return;
+	},
+	process : function(delta)
+	{
+		mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
+		return;
+	},
+}
+
+async function drawModel(context, transform, modelName) {
+    try {
+        console.log('Loading model:', modelName);
+        const object = await loadObject(modelName);
+        console.log('Model loaded, buffer size:', object.byteLength);
+
+        // Ensure shader program is active
+        context.gl.useProgram(context.program);
+        
+        // Calculate vertices
+        const vertexCount = object.byteLength / 32;
+        console.log('Vertex count:', vertexCount);
+        
+        // Buffer setup with verification
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(object), context.gl.STATIC_DRAW);
+        
+        // Enable attributes with error checking
+        const attributes = [
+            { location: 0, size: 3, offset: 0 },    // position
+            { location: 1, size: 3, offset: 12 },   // normal
+            { location: 2, size: 2, offset: 24 }    // texture
+        ];
+        
+        attributes.forEach(attr => {
+            context.gl.vertexAttribPointer(
+                attr.location, 
+                attr.size, 
+                context.gl.FLOAT, 
+                false, 
+                32, 
+                attr.offset
+            );
+            context.gl.enableVertexAttribArray(attr.location);
+        });
+        
+        // Transform setup
+        const MVP = mat4Multiply(transform, context.camera.getMat());
+        context.gl.uniformMatrix4fv(context.MVPloc, false, MVP);
+        
+        // Draw
+        context.gl.drawArrays(context.gl.TRIANGLES, 0, vertexCount);
+        
+        console.log('Draw completed');
+        
+    } catch (error) {
+        console.error('Error in drawModel:', error);
+        console.error('Stack:', error.stack);
+    }
+}
+
+/*
+	console.log(modelName);
+	// Get the arrayBuffer from the model
+	const object = await loadObject(modelName);
+
+	// send position, textures and normal vectors to the buffer
+	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);	//context.positionBuffer?????
+	context.gl.bufferData(context.gl.ARRAY_BUFFER, object, context.gl.STATIC_DRAW);
+	// localize the values in the arrayObject
+	context.gl.vertexAttribPointer(0, 3, context.gl.FLOAT, false, 32, 0);		// position
+	context.gl.vertexAttribPointer(1, 3, context.gl.FLOAT, false, 32, 12);		// normal vectors
+	context.gl.vertexAttribPointer(2, 2, context.gl.FLOAT, false, 32, 24);		// texture
+	// enable then
+	context.gl.enableVertexAttribArray(0);
+	context.gl.enableVertexAttribArray(1);
+	context.gl.enableVertexAttribArray(2);
+
+	//// set transform
+	//let MVP = mat4Multiply(transform, context.camera.getMat());
+	//context.gl.uniformMatrix4fv(context.MVPloc, false, MVP)
+
+	context.gl.drawArrays(context.gl.TRIANGLES, 0, 3);
+*/
+
+
+/*
+PS: To use the models need to run a web Local.	
+	So you can use the python to run easily, with the command "python3 -m http.server"
+*/
 
 // actually start executing code
 main();
