@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebGL 3D Model Loader</title>
+    <style>
+        canvas {
+            width: 800px;
+            height: 600px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glCanvas" width="800" height="600"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+    <script type="text/javascript">
+        let gl;
+        let buffer;
+        let vertexCount = 0;
+        let rotation = 0;
+        
+        // Vertex shader program with lighting
+        const vsSource = `
+            attribute vec3 position;
+            attribute vec3 normal;
+            attribute vec2 texCoord;
+            
+            uniform mat4 modelViewMatrix;
+            uniform mat4 projectionMatrix;
+            uniform mat4 normalMatrix;
+            
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            
+            void main() {
+                vec4 pos = modelViewMatrix * vec4(position, 1.0);
+                gl_Position = projectionMatrix * pos;
+                vPosition = pos.xyz;
+                vNormal = (normalMatrix * vec4(normal, 0.0)).xyz;
+            }
+        `;
+
+        // Fragment shader program with lighting
+        const fsSource = `
+            precision mediump float;
+            
+            varying vec3 vNormal;
+            varying vec3 vPosition;
+            
+            void main() {
+                vec3 normal = normalize(vNormal);
+                vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+                
+                // Ambient light
+                vec3 ambientColor = vec3(0.2, 0.2, 0.2);
+                
+                // Diffuse light
+                float diff = max(dot(normal, lightDir), 0.0);
+                vec3 diffuseColor = vec3(1.0, 0.0, 0.0) * diff;
+                
+                // Specular light
+                vec3 viewDir = normalize(-vPosition);
+                vec3 reflectDir = reflect(-lightDir, normal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+                vec3 specularColor = vec3(1.0) * spec * 0.5;
+                
+                vec3 finalColor = ambientColor + diffuseColor + specularColor;
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        async function init() {
+            const canvas = document.getElementById('glCanvas');
+            gl = canvas.getContext('webgl');
+
+            if (!gl) {
+                alert('Unable to initialize WebGL');
+                return;
+            }
+
+            const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+
+            const programInfo = {
+                program: shaderProgram,
+                attribLocations: {
+                    position: gl.getAttribLocation(shaderProgram, 'position'),
+                    normal: gl.getAttribLocation(shaderProgram, 'normal'),
+                    texCoord: gl.getAttribLocation(shaderProgram, 'texCoord')
+                },
+                uniformLocations: {
+                    projectionMatrix: gl.getUniformLocation(shaderProgram, 'projectionMatrix'),
+                    modelViewMatrix: gl.getUniformLocation(shaderProgram, 'modelViewMatrix'),
+                    normalMatrix: gl.getUniformLocation(shaderProgram, 'normalMatrix')
+                }
+            };
+
+            try {
+                const response = await fetch('./viper.bin');
+                const arrayBuffer = await response.arrayBuffer();
+                const floatArray = new Float32Array(arrayBuffer);
+                vertexCount = floatArray.length / 8;
+
+                console.log('Attribute Locations:', {
+                    position: programInfo.attribLocations.position,
+                    normal: programInfo.attribLocations.normal,
+                    texcoord: programInfo.attribLocations.texCoord
+                });
+
+                buffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+                gl.bufferData(gl.ARRAY_BUFFER, floatArray, gl.STATIC_DRAW);
+
+                // Enable attributes
+                gl.vertexAttribPointer(programInfo.attribLocations.position, 3, gl.FLOAT, false, 32, 0);
+                gl.vertexAttribPointer(programInfo.attribLocations.normal, 3, gl.FLOAT, false, 32, 12);
+                gl.vertexAttribPointer(programInfo.attribLocations.texCoord, 2, gl.FLOAT, false, 32, 24);
+
+                gl.enableVertexAttribArray(programInfo.attribLocations.position);
+                gl.enableVertexAttribArray(programInfo.attribLocations.normal);
+                gl.enableVertexAttribArray(programInfo.attribLocations.texCoord);
+
+                // Enable depth testing
+                gl.enable(gl.DEPTH_TEST);
+                gl.depthFunc(gl.LEQUAL);
+
+                // Start rendering
+                render(programInfo);
+            } catch (error) {
+                console.error('Error loading the binary file:', error);
+            }
+        }
+
+        function render(programInfo) {
+            gl.clearColor(0.2, 0.2, 0.2, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+            const fieldOfView = 45 * Math.PI / 180;
+            const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+            const zNear = 0.1;
+            const zFar = 100.0;
+            const projectionMatrix = mat4.create();
+
+            mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
+
+            const modelViewMatrix = mat4.create();
+            mat4.translate(modelViewMatrix, modelViewMatrix, [0.0, 0.0, -5.0]);
+            mat4.rotate(modelViewMatrix, modelViewMatrix, rotation, [0, 1, 0]);
+
+            const normalMatrix = mat4.create();
+            mat4.invert(normalMatrix, modelViewMatrix);
+            mat4.transpose(normalMatrix, normalMatrix);
+
+            gl.useProgram(programInfo.program);
+
+            gl.uniformMatrix4fv(programInfo.uniformLocations.projectionMatrix, false, projectionMatrix);
+            gl.uniformMatrix4fv(programInfo.uniformLocations.modelViewMatrix, false, modelViewMatrix);
+            gl.uniformMatrix4fv(programInfo.uniformLocations.normalMatrix, false, normalMatrix);
+
+            gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
+
+            rotation += 0.01;
+            requestAnimationFrame(() => render(programInfo));
+        }
+
+        function initShaderProgram(gl, vsSource, fsSource) {
+            const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+            const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+            const shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram));
+                return null;
+            }
+
+            return shaderProgram;
+        }
+
+        function loadShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

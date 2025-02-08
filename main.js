@@ -1,4 +1,4 @@
-function main(){
+async function main(){
 	const canvas = document.querySelector("#c");
 	const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
 
@@ -10,22 +10,35 @@ function main(){
 	// creating shaders/programs
 	let vertexShaderSource = `
 	attribute vec3 position;
+	attribute vec3 normal;
+	attribute vec2 texcoord;
 	attribute vec3 color;
+
+	varying vec3 vNormal;
+	varying vec3 vPosition;
 	varying vec3 vColor;
+
 	uniform mat4 MVP;
+	uniform mat4 normalMatrix;
 	uniform float pointSize;
 	
 	void main() {
-			gl_Position = MVP * vec4(position,1.0);
+			vec4 pos = MVP * vec4(position, 1.0);
 			gl_PointSize = pointSize;
-			vColor = color;
+			gl_Position = pos;
+
+			vPosition = pos.xyz;
+			vNormal = (normalMatrix * vec4(normal, 0.0)).xyz;
+			vColor = color * normal;
 	}
 	`;
 
 	let fragmentShaderSource = `
 	precision mediump float;
 
-	varying vec3 vColor;        
+	varying vec3 vNormal;
+	varying vec3 vPosition;	
+	varying vec3 vColor;
 
 	void main() {
 			gl_FragColor = vec4(vColor,1.0);
@@ -45,7 +58,8 @@ function main(){
 
 
 	//finding uniform placement inside the shader
-	const MVPUniformLoc = gl.getUniformLocation(program, `MVP`);
+	const MVPUniformLoc = gl.getUniformLocation(program, `MVP`);	//model view matrix
+	const normalMatrix = gl.getUniformLocation(program, 'normalMatrix');
 	const pointSizeUniformLoc = gl.getUniformLocation(program, `pointSize`);
 
 	//defining uniform
@@ -53,32 +67,103 @@ function main(){
 	// pushing uniform into shaders
 	gl.uniform1f(pointSizeUniformLoc, line_width);
 
-
-
 	// creating buffers
-	const positionBuffer = gl.createBuffer();
-	const colorBuffer = gl.createBuffer();
+	// const positionBuffer = gl.createBuffer();
+    // const normalBuffer = gl.createBuffer();
+    // const texcoordBuffer = gl.createBuffer();
+	// const colorBuffer = gl.createBuffer();
 
 	// tying buffer to shader
-	const positionLocation = gl.getAttribLocation(program, `position`);
-	gl.enableVertexAttribArray(positionLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-	gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+	const positionLocation = gl.getAttribLocation(program, 'position');
+	// gl.enableVertexAttribArray(positionLocation);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+	// gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+	// Enable and bind normal buffer
+	const normalLocation = gl.getAttribLocation(program, 'normal');
+	// gl.enableVertexAttribArray(normalLocation);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+	// gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
+
+	// Enable and bind texcoord buffer
+	const texcoordLocation = gl.getAttribLocation(program, 'texcoord');
+	// gl.enableVertexAttribArray(texcoordLocation);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+	// gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0);
 
 	// tying buffer to shader
-	const colorLocation = gl.getAttribLocation(program, `color`);
-	gl.enableVertexAttribArray(colorLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+	const colorLocation = gl.getAttribLocation(program, 'color');
+	// gl.enableVertexAttribArray(colorLocation);
+	// gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+	// gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+
+	
+
+	
+
+	// debuggin
+	// console.log('Attribute Locations:', {
+	// 	position: positionLocation,
+	// 	normal: normalLocation,
+	// 	texcoord: texcoordLocation,
+	// 	color: colorLocation
+	// });
+	
+	// if (positionLocation === -1 || normalLocation === -1 || texcoordLocation === -1 || colorLocation === -1) {
+	// 	console.error('One or more attributes are not active in the shader program.');
+	// 	//throw new Error('Shader attributes are not active.');
+	// }
 
 	// setup camera object
 	// camera is at origin(0,0,0), pointing towards (1,1,1)
 	// camera creates the projected_view matrix
-	let main_cam = new camera.camera([0,0,0], [0,1,0], [1,1,1], 1, 500);
+	let main_cam = new camera.camera([0, 0, 5], [0, 0, 0], [0, 1, 0], 45, 0.1, 100);
 	
 	// initialization ready, tie everything up into one context structure
 	// this context around instead of making functions with a thousand parameters
-	const WebGL = new context.context(gl, positionBuffer, colorBuffer, main_cam, MVPUniformLoc);
+
+	//const WebGL = new context.context(gl, positionBuffer, normalBuffer, texcoordBuffer, colorBuffer, main_cam, MVPUniformLoc
+	//	, normalMatrix);
+
+	// putting location on context instead of the buffers
+	const WebGL = new context.context(gl, positionLocation, normalLocation, texcoordLocation, colorLocation, main_cam, MVPUniformLoc
+		, normalMatrix);
+
+	console.log(WebGL);
+
+
+	try {
+        const response = await fetch('./viper.bin');
+        const arrayBuffer = await response.arrayBuffer();
+        const modelData = new Float32Array(arrayBuffer);
+		vertexCount = modelData.length / 8;
+
+		buffer = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+		gl.bufferData(gl.ARRAY_BUFFER, modelData, gl.STATIC_DRAW);
+
+		// Enable attributes
+		gl.vertexAttribPointer(WebGL.positionLocation, 3, gl.FLOAT, false, 32, 0);
+		gl.vertexAttribPointer(WebGL.normalLocation, 3, gl.FLOAT, false, 32, 12);
+		gl.vertexAttribPointer(WebGL.texCoordLocation, 2, gl.FLOAT, false, 32, 24);
+
+		gl.enableVertexAttribArray(WebGL.positionLocation);
+		gl.enableVertexAttribArray(WebGL.normalLocation);
+		gl.enableVertexAttribArray(WebGL.texCoordLocation);
+
+		// Ja tinha colocado isso no começo do codigo mas usei denovo só pra ter certeza
+		gl.enable(gl.DEPTH_TEST);
+        gl.depthFunc(gl.LEQUAL);
+
+		render(WebGL, vertexCount, program);
+
+    } catch (error) {
+        console.error('Error loading or rendering the model:', error);
+    }
+	
+
+	return;
+	//stop here
 
 
 	// callbacks... not driving anything for now
@@ -112,20 +197,6 @@ function main(){
 		}
 		// print(key_states);
 	}
-	// // add click callback
-	// canvas.addEventListener("mousedown", onMouseCick, false);
-	// // click callback
-	// function onMouseCick(event)
-	// {
-	// 	// x = event.offsetX;
-	// 	// y = event.offsetY;
-	// 	// console.log(x,y);
-	// 	pos[0] = initial_pos[0];
-	// 	pos[1] = initial_pos[1];
-	// 	pos[2] = initial_pos[2];
-	// }
-
-
 
 	
 	// clean screen and depth buffer
@@ -133,17 +204,26 @@ function main(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
+	let objectsModels = [];
+	objectsModels.push(viper_object);
+
+	//Load models before to start drawing
+	for(objMod of objectsModels)
+	{
+		await objMod.load();
+	}
+
 	// vector of everything the game needs to keep track of
 	// push things in here and forget about them :D
 	let objects = [];
-	// objects.push(cube_object, spin_object);
-	objects.push(cat_object);
+	objects.push(cube_object, spin_object);
+	// objects.push(viper_object);
 	// todo: figure out how to clear the trash
 
 
 	// keeps track of time
 	let last_T = Date.now();
-	process();
+	//process();
 	// gets called to draw every single frame
 	function process()
 	{
@@ -179,14 +259,26 @@ function main(){
 	
 }
 
-// keystates, read this instead of directly listening to the events
-let key_states = { 
-	'd' : 0,
-	'a' : 0,
-	'e' : 0,
-	'q' : 0,
-	'w' : 0,
-	's' : 0,
+function render(context, vertexCount, program) {
+	context.gl.clearColor(0.2, 0.2, 0.2, 1.0);
+	context.gl.clear(context.gl.COLOR_BUFFER_BIT | context.gl.DEPTH_BUFFER_BIT);
+
+	const MVP = mat4.create();
+	mat4.translate(MVP, MVP, [0.0, 0.0, -5.0]);
+	mat4.rotate(MVP, MVP, [0, 0, 0], [0, 1, 0]);
+
+	const normalMatrix = mat4.create();
+	mat4.invert(normalMatrix, MVP);
+	mat4.transpose(normalMatrix, normalMatrix);
+
+	context.gl.useProgram(program);
+
+	context.gl.uniformMatrix4fv(context.MVPloc, false, MVP);
+	context.gl.uniformMatrix4fv(context.normalMatrix, false, normalMatrix);
+
+	context.gl.drawArrays(context.gl.TRIANGLES, 0, vertexCount);
+
+	requestAnimationFrame(() => render(context, vertexCount, program));
 }
 
 // this isn't the right place to declare the objects
@@ -229,7 +321,6 @@ let spin_object = {
 	},
 }
 
-
 /* writing convenience */
 
 const PI2 = 2*Math.PI;
@@ -241,13 +332,32 @@ function print(thing){console.log(thing);}
 /* objects */
 
 // openGL context and things
+// let context = {
+// 	context : function(gl, positionBuffer, normalBuffer, texcoordBuffer, colorBuffer, camera, MVPloc
+// 		, normalMatrix){
+// 		this.gl = gl;
+// 		this.positionBuffer = positionBuffer;
+//         this.normalBuffer = normalBuffer;
+//         this.texcoordBuffer = texcoordBuffer
+// 		this.colorBuffer = colorBuffer;
+// 		this.camera = camera;
+// 		this.MVPloc = MVPloc;
+// 		this.normalMatrix = normalMatrix
+// 	}
+// };
+
+// Creating a context that use location instead of buffers, just for testing purpose
 let context = {
-	context : function(gl, positionBuffer, colorBuffer, camera, MVPloc){
+	context : function(gl, positionLocation, normalLocation, texcoordLocation, colorLocation, camera, MVPloc
+		, normalMatrix){
 		this.gl = gl;
-		this.positionBuffer = positionBuffer;
-		this.colorBuffer = colorBuffer;
+		this.positionLocation = positionLocation;
+        this.normalLocation = normalLocation;
+        this.texcoordLocation = texcoordLocation
+		this.colorLocation = colorLocation;
 		this.camera = camera;
 		this.MVPloc = MVPloc;
+		this.normalMatrix = normalMatrix
 	}
 };
 
@@ -682,13 +792,25 @@ async function loadObject(objectName){
 }
 
 // For model object imported
-let cat_object = {
+// For model object imported
+// test object
+let viper_object = {
 	position : [-70,-70,-70],
-	ang : 0.0,
+	model : null, 
+	load: async function()
+	{
+		this.model = await loadObject('./viper.bin');
+        console.log(this.model);
+
+	},
 	draw : async function(context)
 	{
-		await drawModel(context, mat4Transform(this.position), './cat.bin');
-		return;
+		if (this.model) {
+            await drawModel(context, mat4Transform(this.position), this.model);
+			return;
+        } else {
+            console.error('Model not loaded yet.');
+        }
 	},
 	process : function(delta)
 	{
@@ -703,81 +825,78 @@ let cat_object = {
 	},
 }
 
-async function drawModel(context, transform, modelName) {
+async function drawModel(context, transform, modelBuffer) {
     try {
-        console.log('Loading model:', modelName);
-        const object = await loadObject(modelName);
-        console.log('Model loaded, buffer size:', object.byteLength);
+        const dataView = new DataView(modelBuffer);
+        let offset = 0;
 
-        // Ensure shader program is active
-        context.gl.useProgram(context.program);
-        
-        // Calculate vertices
-        const vertexCount = object.byteLength / 32;
-        console.log('Vertex count:', vertexCount);
-        
-        // Buffer setup with verification
+        // Read and verify vertex count
+        const vertexCount = dataView.getUint32(offset, true);
+        offset += 4;
+
+        // Validate vertex count
+        if (vertexCount <= 0 || vertexCount > modelBuffer.byteLength / 4) {
+            throw new Error(`Invalid vertex count: ${vertexCount}`);
+        }
+
+        // Calculate required buffer sizes
+        const stride = (3 + 3 + 2 + 3) * 4; // position + normal + texcoord + color
+        const expectedSize = 4 + (vertexCount * stride);
+
+        if (modelBuffer.byteLength < expectedSize) {
+            throw new Error(`Buffer too small. Expected ${expectedSize} bytes, got ${modelBuffer.byteLength}`);
+        }
+
+        // Create arrays
+        const positions = new Float32Array(vertexCount * 3);
+        const normals = new Float32Array(vertexCount * 3);
+        const texcoords = new Float32Array(vertexCount * 2);
+        const colors = new Float32Array(vertexCount * 3);
+
+        // Read vertex data
+        for (let i = 0; i < vertexCount; i++) {
+            // Position (x, y, z)
+            for (let j = 0; j < 3; j++) positions[i * 3 + j] = dataView.getFloat32(offset, true), offset += 4;
+
+            // Normal (x, y, z)
+            for (let j = 0; j < 3; j++) normals[i * 3 + j] = dataView.getFloat32(offset, true), offset += 4;
+
+            // Texcoord (u, v)
+            for (let j = 0; j < 2; j++) texcoords[i * 2 + j] = dataView.getFloat32(offset, true), offset += 4;
+
+            // Color (r, g, b)
+            for (let j = 0; j < 3; j++) colors[i * 3 + j] = dataView.getFloat32(offset, true), offset += 4;
+        }
+
+        // Bind and buffer data
         context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);
-        context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(object), context.gl.STATIC_DRAW);
-        
-        // Enable attributes with error checking
-        const attributes = [
-            { location: 0, size: 3, offset: 0 },    // position
-            { location: 1, size: 3, offset: 12 },   // normal
-            { location: 2, size: 2, offset: 24 }    // texture
-        ];
-        
-        attributes.forEach(attr => {
-            context.gl.vertexAttribPointer(
-                attr.location, 
-                attr.size, 
-                context.gl.FLOAT, 
-                false, 
-                32, 
-                attr.offset
-            );
-            context.gl.enableVertexAttribArray(attr.location);
-        });
-        
-        // Transform setup
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, positions, context.gl.STATIC_DRAW);
+
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.normalBuffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, normals, context.gl.STATIC_DRAW);
+
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.texcoordBuffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, texcoords, context.gl.STATIC_DRAW);
+
+        context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.colorBuffer);
+        context.gl.bufferData(context.gl.ARRAY_BUFFER, colors, context.gl.STATIC_DRAW);
+
+        // Set transform and draw
         const MVP = mat4Multiply(transform, context.camera.getMat());
         context.gl.uniformMatrix4fv(context.MVPloc, false, MVP);
-        
-        // Draw
+
+        // Draw the model
         context.gl.drawArrays(context.gl.TRIANGLES, 0, vertexCount);
-        
-        console.log('Draw completed');
-        
+
     } catch (error) {
         console.error('Error in drawModel:', error);
-        console.error('Stack:', error.stack);
+        console.error('Buffer details:', {
+            byteLength: modelBuffer.byteLength,
+            offset: offset
+        });
+        throw error;
     }
 }
-
-/*
-	console.log(modelName);
-	// Get the arrayBuffer from the model
-	const object = await loadObject(modelName);
-
-	// send position, textures and normal vectors to the buffer
-	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);	//context.positionBuffer?????
-	context.gl.bufferData(context.gl.ARRAY_BUFFER, object, context.gl.STATIC_DRAW);
-	// localize the values in the arrayObject
-	context.gl.vertexAttribPointer(0, 3, context.gl.FLOAT, false, 32, 0);		// position
-	context.gl.vertexAttribPointer(1, 3, context.gl.FLOAT, false, 32, 12);		// normal vectors
-	context.gl.vertexAttribPointer(2, 2, context.gl.FLOAT, false, 32, 24);		// texture
-	// enable then
-	context.gl.enableVertexAttribArray(0);
-	context.gl.enableVertexAttribArray(1);
-	context.gl.enableVertexAttribArray(2);
-
-	//// set transform
-	//let MVP = mat4Multiply(transform, context.camera.getMat());
-	//context.gl.uniformMatrix4fv(context.MVPloc, false, MVP)
-
-	context.gl.drawArrays(context.gl.TRIANGLES, 0, 3);
-*/
-
 
 /*
 PS: To use the models need to run a web Local.	
