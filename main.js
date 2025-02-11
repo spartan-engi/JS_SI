@@ -179,6 +179,47 @@ function main(){
 		// WebGL.gl.viewport(0,0, canvas.width/2, canvas.height/2);
 		// console.log(obj);
 
+		// compute collisions for all pair of objects
+		for(let i = 0; i < objects.length; i++)
+		{
+			let a = objects[i];
+			for(let j = i+1; j < objects.length; j++)
+			{
+				// (n^2)/2 comparisons
+				let b = objects[j];
+				
+				// both a and b have to exist in the same collision 'world'
+				// consider it in binary, (0b001 = 1) and (0b010 = 2) woudn't intersect
+				if(!(a.collision_mask & b.collision_mask)) continue;
+				
+				// maximum distance from the two, that would still cause a collision
+				let compound_size;
+				// distance of the two objects
+				let distance;
+				// |--a--|     // |--a--|     
+				//     |--b--| //        |--b--| 
+				// presumes that everything is a box
+				// and nothing is spining.
+
+				//collision calculation is axis independant
+				let collision = true;
+				for(let axis = 0; axis < 3; axis++)
+				{
+					compound_size = a.size[axis] + b.size[axis];
+					distance = a.position[axis] - b.position[axis];
+					if((-compound_size > distance)||(distance > compound_size))
+					{
+						collision = false;
+						break;
+					}
+				}
+				if(!collision) continue;
+				
+				//collision!
+				a.collided();
+				b.collided();
+			}
+		}
 		// give a chance for all the objects to update themselves
 		for(obj of objects)
 		{
@@ -214,13 +255,26 @@ let key_states = {
 let cube_object = {
 	position : [-70,-70,-70],
 	size : [24,24,24],
+	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
+	color : [.5,.5,.5],
+
+	colision_detected : false,
+	collided : function()
+	{
+		this.colision_detected = true;
+		return;
+	},
 	draw : function(context)
 	{
-		drawCube(context, mat4Transform(this.position), this.size, [.5,.5,.5]);
+		drawCube(context, mat4Transform(this.position), this.size, this.color);
 		return;
 	},
 	process : function(delta)
 	{
+		if(this.colision_detected)	this.color = [1,.5,.5];
+		else						this.color = [.5,.5,.5];
+		this.colision_detected = false;
+
 		mov = [0,0,0];
 		mov[0] = key_states['a'] - key_states['d'];
 		mov[1] = key_states['e'] - key_states['q'];
@@ -235,7 +289,12 @@ let cube_object = {
 let spin_object = {
 	position : [-38,-70,-134],
 	size : [16,16,16],
+	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
 	ang : 0.0,
+	collided : function()
+	{
+		return;
+	},
 	draw : function(context)
 	{
 		// find the rotated 'Z' axis of this model
