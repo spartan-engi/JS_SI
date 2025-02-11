@@ -60,10 +60,10 @@ const saveBinaryFile = (fileName, arrayBuffer) => {
 }
 
 const main = async () => {
-    const fileContents = await getFileContents('12221_Cat_v1_l3.obj');
+    const fileContents = await getFileContents('cat.obj');
     const arrayBuffer = parseFile(fileContents);
 	console.log(arrayBuffer);
-	saveBinaryFile('cat.bin', arrayBuffer);
+	saveBinaryFile('cat.bin', arrayBuffer);		// Create a object of the same name .bin
 };
 
 main();

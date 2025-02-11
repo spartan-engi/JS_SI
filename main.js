@@ -1,3 +1,7 @@
+const pathModelsBin = './models/bin/';
+const objects = [];
+// todo: figure out how to clear the trash
+
 function main(){
 	const canvas = document.querySelector("#c");
 	const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
@@ -155,14 +159,6 @@ function main(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 
-	// vector of everything the game needs to keep track of
-	// push things in here and forget about them :D
-	let objects = [];
-	objects.push(model_object, spin_object);
-	model_object.ready();
-	// todo: figure out how to clear the trash
-
-
 	// keeps track of time
 	let last_T = Date.now();
 	process();
@@ -210,78 +206,6 @@ let key_states = {
 	'w' : 0,
 	's' : 0,
 }
-
-// this isn't the right place to declare the objects
-// model?
-let model_object = {
-	position : [-70,-70,-70],
-	vPos : [0],
-	vCol : [0],
-	vCnt : 0,
-	ready : async function()
-	{
-		try
-		{
-			const response = await fetch('./viper.bin');
-			const arrayBuffer = await response.arrayBuffer();
-			const modelData = new Float32Array(arrayBuffer);
-
-			this.vCnt = modelData.length / 8;
-			for(let i = 0; i < this.vCnt; i++)
-			{
-				this.vPos[(i*3) + 0] = modelData[(i*8) + 0] * 52;
-				this.vPos[(i*3) + 1] = modelData[(i*8) + 1] * 52;
-				this.vPos[(i*3) + 2] = modelData[(i*8) + 2] * 52;
-
-				this.vCol[(i*3) + 0] = modelData[(i*8) + 3];
-				this.vCol[(i*3) + 1] = modelData[(i*8) + 4];
-				this.vCol[(i*3) + 2] = modelData[(i*8) + 5];
-			}
-		}
-		catch(e)
-		{
-			print("model loading error");
-			print(e);
-			return;
-		}
-	},
-	draw : function(context)
-	{
-		drawArr(context, this.vPos, this.vCol, this.vCnt, mat4Transform(this.position), [48,48,48], [.5,.5,.5]);
-		return;
-	},
-	process : function(delta)
-	{
-		mov = [0,0,0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
-		return;
-	},
-}
-// this isn't the right place to declare the objects
-let spin_object = {
-	position : [-38,-70,-134],
-	ang : 0.0,
-	draw : function(context)
-	{
-		// find the rotated 'Z' axis of this model
-		let z = [sin(this.ang), 0, cos(this.ang)];
-		// and the transform matrix is constructed around this vector
-		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
-		return;
-	},
-	process : function(delta)
-	{
-		// increment the angle of rotation a bit every frame
-		this.ang += delta/500;
-		return;
-	},
-}
-
 
 /* writing convenience */
 
@@ -339,11 +263,80 @@ let camera = {
 	}
 };
 
+/* Objects declaration */
+
+let spaceShip_object = {
+	position : [-70,-70,-70],
+	vPos : [0],		// vector position
+	vCol : [0],		// vector color
+	vQnt : 0,		// quantity of vectors
+
+	async ready() {
+        try {
+			model = `${pathModelsBin}viper.bin`;
+
+            const modelData = await loadModel(model);
+            this.processModelData(modelData);
+        } catch(error) {
+            console.error("Failed to load spaceship model:", error);
+        }
+    },
+	processModelData(modelData) {
+		// Count quantity of vectors
+        this.vQnt = modelData.length / 8;
+        for(let i = 0; i < this.vQnt; i++) {
+            // Position data (scaled by 52)
+            const basePos = i * 3;
+            const baseData = i * 8;
+            this.vPos[basePos + 0] = modelData[baseData + 0] * 52;
+            this.vPos[basePos + 1] = modelData[baseData + 1] * 52;
+            this.vPos[basePos + 2] = modelData[baseData + 2] * 52;
+
+            // Color data
+            this.vCol[basePos + 0] = modelData[baseData + 3];
+            this.vCol[basePos + 1] = modelData[baseData + 4];
+            this.vCol[basePos + 2] = modelData[baseData + 5];
+        }
+    },
+	draw : function(context)
+	{
+		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
+		return;
+	},
+	process : function(delta)
+	{
+		mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
+		return;
+	},
+}
+
+let spin_object = {
+	position : [-38,-70,-134],
+	ang : 0.0,
+	draw : function(context)
+	{
+		// find the rotated 'Z' axis of this model
+		let z = [sin(this.ang), 0, cos(this.ang)];
+		// and the transform matrix is constructed around this vector
+		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
+		return;
+	},
+	process : function(delta)
+	{
+		// increment the angle of rotation a bit every frame
+		this.ang += delta/500;
+		return;
+	},
+}
 
 /* 3d drawing functions */
-
-//draw a cube at postion[x,y,z] of size[w,h,d] with a rotation and color[r,g,b] 
-function drawArr(context, vertices, colorData, vertexCount, transform)
+function drawModel(context, vertices, colorData, vertexCount, transform)
 {
 	// send position data
 	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);
@@ -614,6 +607,25 @@ function mat4OrthInverse(mat)
 	];
 }
 
+/* Utils */
+// modelName paths example: './models/bin/viper.bin'
+async function loadModel(modelName) {
+	const response = await fetch(modelName);
+	const arrayBuffer = await response.arrayBuffer();
+	
+	return new Float32Array(arrayBuffer);
+}
+
+
+// Initialize objects before of the game, if are not converted, it will convert to bin
+function initializeObjects() {
+    objects.push(spaceShip_object, spin_object);
+    
+    // Initialize all models that need setup
+    objects.forEach(obj => {
+        if (obj.ready) obj.ready();
+    });
+}
 
 
 /* 2d funtions */
@@ -737,4 +749,5 @@ function drawLine(context, transform, p1 = [0,0,0], p2 = [0,0,0], color = [0,0,0
 
 
 // actually start executing code
+initializeObjects();
 main();
