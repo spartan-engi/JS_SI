@@ -213,9 +213,10 @@ let key_states = {
 // this isn't the right place to declare the objects
 let cube_object = {
 	position : [-70,-70,-70],
+	size : [24,24,24],
 	draw : function(context)
 	{
-		drawCube(context, mat4Transform(this.position), [48,48,48], [.5,.5,.5]);
+		drawCube(context, mat4Transform(this.position), this.size, [.5,.5,.5]);
 		return;
 	},
 	process : function(delta)
@@ -233,13 +234,14 @@ let cube_object = {
 // this isn't the right place to declare the objects
 let spin_object = {
 	position : [-38,-70,-134],
+	size : [16,16,16],
 	ang : 0.0,
 	draw : function(context)
 	{
 		// find the rotated 'Z' axis of this model
 		let z = [sin(this.ang), 0, cos(this.ang)];
 		// and the transform matrix is constructed around this vector
-		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
+		drawCube(context, mat4Transform(this.position, [1,1,1], z), this.size, [.8,.5,.5]);
 		return;
 	},
 	process : function(delta)
@@ -315,52 +317,52 @@ function drawCube(context, transform, size = [0,0,0], color = [0,0,0,0])
 {
     const vertexData = [
 		// Front
-		0.5, 0.5, 0.5,
-		0.5, -.5, 0.5,
-		-.5, 0.5, 0.5,
-		-.5, 0.5, 0.5,
-		0.5, -.5, 0.5,
-		-.5, -.5, 0.5,
+		+1, +1, +1,
+		+1, -1, +1,
+		-1, +1, +1,
+		-1, +1, +1,
+		+1, -1, +1,
+		-1, -1, +1,
 	
 		// Back
-		-.5, 0.5, -.5,
-		-.5, -.5, -.5,
-		0.5, 0.5, -.5,
-		0.5, 0.5, -.5,
-		-.5, -.5, -.5,
-		0.5, -.5, -.5,
+		-1, +1, -1,
+		-1, -1, -1,
+		+1, +1, -1,
+		+1, +1, -1,
+		-1, -1, -1,
+		+1, -1, -1,
 	
 		// Right
-		0.5, 0.5, -.5,
-		0.5, -.5, -.5,
-		0.5, 0.5, 0.5,
-		0.5, 0.5, 0.5,
-		0.5, -.5, 0.5,
-		0.5, -.5, -.5,
+		+1, +1, -1,
+		+1, -1, -1,
+		+1, +1, +1,
+		+1, +1, +1,
+		+1, -1, +1,
+		+1, -1, -1,
 	
 		// Left
-		-.5, 0.5, 0.5,
-		-.5, -.5, 0.5,
-		-.5, 0.5, -.5,
-		-.5, 0.5, -.5,
-		-.5, -.5, 0.5,
-		-.5, -.5, -.5,
+		-1, +1, +1,
+		-1, -1, +1,
+		-1, +1, -1,
+		-1, +1, -1,
+		-1, -1, +1,
+		-1, -1, -1,
 	
 		// Top
-		0.5, 0.5, 0.5,
-		0.5, 0.5, -.5,
-		-.5, 0.5, 0.5,
-		-.5, 0.5, 0.5,
-		0.5, 0.5, -.5,
-		-.5, 0.5, -.5,
+		+1, +1, +1,
+		+1, +1, -1,
+		-1, +1, +1,
+		-1, +1, +1,
+		+1, +1, -1,
+		-1, +1, -1,
 	
 		// Bottom
-		0.5, -.5, 0.5,
-		0.5, -.5, -.5,
-		-.5, -.5, 0.5,
-		-.5, -.5, 0.5,
-		0.5, -.5, -.5,
-		-.5, -.5, -.5,
+		+1, -1, +1,
+		+1, -1, -1,
+		-1, -1, +1,
+		-1, -1, +1,
+		+1, -1, -1,
+		-1, -1, -1,
 	  ];
 	
 	let faceColor = [
