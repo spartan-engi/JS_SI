@@ -1,4 +1,13 @@
 
+// keystates, read this instead of directly listening to the events
+let key_states = { 
+	'd' : 0,
+	'a' : 0,
+	'e' : 0,
+	'q' : 0,
+	'w' : 0,
+	's' : 0,
+}
 // key callback
 function onKeyPress(event)
 {
