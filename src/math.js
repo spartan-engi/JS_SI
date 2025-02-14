@@ -32,10 +32,10 @@ function vec3normalize(vec)
 
 function vec4MultplyMat4(vec,mat){
 	let vector = [
-		mat[ 0]*vec[0] + mat[ 1]*vec[1] + mat[ 2]*vec[2] + mat[ 3]*vec[3],
-		mat[ 4]*vec[0] + mat[ 5]*vec[1] + mat[ 6]*vec[2] + mat[ 7]*vec[3],
-		mat[ 8]*vec[0] + mat[ 9]*vec[1] + mat[10]*vec[2] + mat[11]*vec[3],
-		mat[12]*vec[0] + mat[13]*vec[1] + mat[14]*vec[2] + mat[15]*vec[3]
+		mat[0]*vec[0] + mat[4]*vec[1] + mat[ 8]*vec[2] + mat[12]*vec[3],
+		mat[1]*vec[0] + mat[5]*vec[1] + mat[ 9]*vec[2] + mat[13]*vec[3],
+		mat[2]*vec[0] + mat[6]*vec[1] + mat[10]*vec[2] + mat[14]*vec[3],
+		mat[3]*vec[0] + mat[7]*vec[1] + mat[11]*vec[2] + mat[15]*vec[3]
 	];
 	return vector;
 }
@@ -145,10 +145,10 @@ function mat4Multiply(m1, m2)
 function mat4Print(mat)
 {
 	console.log(
-		mat[ 0].toFixed(3), mat[ 1].toFixed(3), mat[ 2].toFixed(3), mat[ 3].toFixed(3),'\n',
-		mat[ 4].toFixed(3), mat[ 5].toFixed(3), mat[ 6].toFixed(3), mat[ 7].toFixed(3),'\n',
-		mat[ 8].toFixed(3), mat[ 9].toFixed(3), mat[10].toFixed(3), mat[11].toFixed(3),'\n',
-		mat[12].toFixed(3), mat[13].toFixed(3), mat[14].toFixed(3), mat[15].toFixed(3),'\n',
+		mat[0].toFixed(3), mat[4].toFixed(3), mat[ 8].toFixed(3), mat[12].toFixed(3),'\n',
+		mat[1].toFixed(3), mat[5].toFixed(3), mat[ 9].toFixed(3), mat[13].toFixed(3),'\n',
+		mat[2].toFixed(3), mat[6].toFixed(3), mat[10].toFixed(3), mat[14].toFixed(3),'\n',
+		mat[3].toFixed(3), mat[7].toFixed(3), mat[11].toFixed(3), mat[15].toFixed(3),'\n',
 	);
 }
 

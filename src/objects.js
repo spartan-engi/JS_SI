@@ -42,6 +42,7 @@ let camera = {
 			// // clip matrix - from camera coordinates to normalized screen coordinates
 			// // camera will render things from (-250 < x < 250), (250 > y > -250), (-250 < z < 250)
 			// let clip = mat4Transform([0,0,0], [2/canvas.width, 2/canvas.height, 2/500]);
+
 		}
 	}
 };
@@ -88,10 +89,12 @@ let cube_object = {
 }
 
 let spaceShip_object = {
-	position : [-70,-70,-70],
+	position : [-60,-150,-60],
 	vPos : [0],		// vector position
 	vCol : [0],		// vector color
 	vQnt : 0,		// quantity of vectors
+	ang : [0,0],
+	z: [-11,-5,-10],
 
 	async ready() {
         try {
@@ -122,7 +125,7 @@ let spaceShip_object = {
     },
 	draw : function(context)
 	{
-		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
+		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position, [1,1,1],this.z));
 		return;
 	},
 	process : function(delta)
@@ -134,6 +137,26 @@ let spaceShip_object = {
 		this.position[0] += mov[0];
 		this.position[1] += mov[1];
 		this.position[2] += mov[2];
+
+		if (!(stop)){
+			this.ang[0] -= PI2/360*dirMouse[1]/10; //mover em y rotaciona em x
+			this.ang[1] += PI2/360*dirMouse[0]/10; // mover em x rotaciona em y
+
+			this.ang[0]=Math.min(Math.max(-PI2/4,this.ang[0]),PI2/4);
+			this.ang[1]=Math.min(Math.max(-PI2/4,this.ang[1]),PI2/4);
+
+			print([this.ang[0],this.ang[1]]);
+			dirMouse = [0,0];
+		}else{
+			print(this.ang[0],this.ang[1]);
+		}
+		
+		let matRot = mat4Rotation(this.ang[0],this.ang[1]);
+		let pos = vec4MultplyMat4([0,0,-1,1],matRot);
+		this.z[0] = pos[0];
+		this.z[1] = pos[1];
+		this.z[2] = pos[2];
+
 		return;
 	},
 }
