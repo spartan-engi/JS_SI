@@ -1,9 +1,15 @@
-body {
-    margin: 0;
+.container {
+    position: relative;
 }
 
-canvas {
-    border: 1px solid black;
-    width: 500px;
-    height: 500px;
+#text {
+    background-color: transparent;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    z-index: 10;
+}
+
+#c {
+    background-color: transparent;
 }

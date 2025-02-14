@@ -1,3 +1,4 @@
+
 // openGL context and things, makes passing arguments around much simpler
 let context = {
 	context : function(gl, positionBuffer, colorBuffer, viewMat, MVPloc){
@@ -185,10 +186,6 @@ function drawCircle(context, transform, n, radius, color = [0,0,0,0])
 function main(){
 	const canvas = document.querySelector("#c");
 	const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
-	var textCanvas = document.querySelector("#text");
-
-	// cria um contexto 2D
-	var ctx = textCanvas.getContext("2d");
 
 	if (!gl) {
 		throw new Error('WebGL not supported');
@@ -270,27 +267,8 @@ function main(){
 	const WebGL = new context.context(gl, positionBuffer, colorBuffer, view, MVPUniformLoc);
 
 
-	let how_to_play = [[100, 400],[45, 135]];
-	let play_game = [[100, 400],[145, 235]];
-	let options = [[100, 400],[245, 335]];
-	let exit = [[100, 400],[345, 435]];
-	let how_to_play_locked = 0;
-	let play_game_locked = 0;
-	let options_locked = 0;
-	let exit_locked = 0;
+	
 	// add mouse callback
-
-	canvas.addEventListener("click", onMouseClick, false);	//only the frame that the mouse is pressed
-	// click callback
-	let pointerLock = 0;
-	async function onMouseClick(event)
-	{
-		if (play_game_locked == 1) {
-			window.location.href = "./game.html";
-		}
-	}
-
-
 	canvas.addEventListener("mousemove", onMouseEvent, false);
 	let mouse_location = [0,0];
 	// mouse callback
@@ -299,73 +277,37 @@ function main(){
 		mouse_location[0] = event.offsetX;
 		mouse_location[1] = event.offsetY;
 		// console.log(mouse_location);
-
-
-		if (mouse_location[0] > how_to_play[0][0] && mouse_location[0] < how_to_play[0][1] && mouse_location[1] > how_to_play[1][0] && mouse_location[1] < how_to_play[1][1]){
-			how_to_play_locked = 1;
-		} else {
-			how_to_play_locked = 0;
-		}
-
-		if (mouse_location[0] > play_game[0][0] && mouse_location[0] < play_game[0][1] && mouse_location[1] > play_game[1][0] && mouse_location[1] < play_game[1][1]){
-			play_game_locked = 1;
-		} else {
-			play_game_locked = 0;
-		}
-
-		if (mouse_location[0] > options[0][0] && mouse_location[0] < options[0][1] && mouse_location[1] > options[1][0] && mouse_location[1] < options[1][1]){
-			options_locked = 1;
-		} else {
-			options_locked = 0;
-		}
-
-		if (mouse_location[0] > exit[0][0] && mouse_location[0] < exit[0][1] && mouse_location[1] > exit[1][0] && mouse_location[1] < exit[1][1]){
-			exit_locked = 1;
-		} else {
-			exit_locked = 0;
-		}
 	}
+	// // add keyboard callback
+	// const bodyElement = document.querySelector("body");
+	// bodyElement.addEventListener("keydown", onKeyPress, false)
+	// //keypress callback
+	// function onKeyPress(event)
+	// {
+	// 	switch(event.key)
+	// }
 
 	// start animation
 	requestAnimationFrame(drawFrame);
 	function drawFrame()
 	{
-
+		// delta, time elapsed since last last 'frame'
+		delta = Date.now() - T;
+		T = Date.now();
+		// console.log(delta/1000);
+		
 		//clean screen
 		gl.clearColor(1.0, 1.0, 1.0, 1.0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.font = "bold 48px serif";
-		ctx.fillText('Jogar', 100,100);
+
+
 
 		//drawing
-		if (how_to_play_locked == 0) {
-			drawRectangle(WebGL, mat4Transform([250,90], [30,1], 0), [10, 90], [.5,.5,.5]);
-		} else {
-			drawRectangle(WebGL, mat4Transform([250,90], [30,1], 0), [10, 90], [.7,.7,.7]);
-		}
-
-		if (play_game_locked == 0) {
-			drawRectangle(WebGL, mat4Transform([250,190], [30,1], 0), [10, 90], [.5,.5,.5]);
-		} else {
-			drawRectangle(WebGL, mat4Transform([250,190], [30,1], 0), [10, 90], [.7,.7,.7]);
-		}
-
-		if (options_locked == 0) {
-			drawRectangle(WebGL, mat4Transform([250,290], [30,1], 0), [10, 90], [.5,.5,.5]);
-		} else {
-			drawRectangle(WebGL, mat4Transform([250,290], [30,1], 0), [10, 90], [.7,.7,.7]);
-		}
-
-		if (exit_locked == 0) {
-			drawRectangle(WebGL, mat4Transform([250,390], [30,1], 0), [10, 90], [.5,.5,.5]);
-		} else {
-			drawRectangle(WebGL, mat4Transform([250,390], [30,1], 0), [10, 90], [.7,.7,.7]);
-		}
+		drawRectangle(WebGL, mat4Transform([30,300], [1,1], 0), [10, 300], [.2,.2,.2]); // right paddle
+		drawRectangle(WebGL, mat4Transform([ 30,90], [1,1], 0), [10, 90], [.2,.2,.2]); // left  paddle
 
 		requestAnimationFrame(drawFrame);
 	}
-
 }
 
 
