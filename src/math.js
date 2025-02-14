@@ -144,11 +144,11 @@ function mat4Multiply(m1, m2)
 
 function mat4Print(mat)
 {
-	console.log('%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n', 
-		mat[0], mat[4], mat[ 8], mat[12],
-		mat[1], mat[5], mat[ 9], mat[13],
-		mat[2], mat[6], mat[10], mat[14],
-		mat[3], mat[7], mat[11], mat[15],
+	console.log(
+		mat[ 0].toFixed(3), mat[ 1].toFixed(3), mat[ 2].toFixed(3), mat[ 3].toFixed(3),'\n',
+		mat[ 4].toFixed(3), mat[ 5].toFixed(3), mat[ 6].toFixed(3), mat[ 7].toFixed(3),'\n',
+		mat[ 8].toFixed(3), mat[ 9].toFixed(3), mat[10].toFixed(3), mat[11].toFixed(3),'\n',
+		mat[12].toFixed(3), mat[13].toFixed(3), mat[14].toFixed(3), mat[15].toFixed(3),'\n',
 	);
 }
 
