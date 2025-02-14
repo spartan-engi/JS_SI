@@ -12,7 +12,7 @@ function main(){
 
 
 	// creating shaders/programs
-	let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+	let vertexShader   = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
 	let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 
 	let program = createProgram(gl, vertexShader, fragmentShader);
@@ -25,7 +25,7 @@ function main(){
 
 
 	//finding uniform placement inside the shader
-	const MVPUniformLoc = gl.getUniformLocation(program, `MVP`);
+	const MVPUniformLoc       = gl.getUniformLocation(program, `MVP`);
 	const pointSizeUniformLoc = gl.getUniformLocation(program, `pointSize`);
 
 	//defining uniform
@@ -37,7 +37,7 @@ function main(){
 
 	// creating buffers
 	const positionBuffer = gl.createBuffer();
-	const colorBuffer = gl.createBuffer();
+	const colorBuffer    = gl.createBuffer();
 
 	// tying buffer to shader
 	const positionLocation = gl.getAttribLocation(program, `position`);

@@ -20,6 +20,7 @@ function drawModel(context, vertices, colorData, vertexCount, transform)
 //draw a cube at postion[x,y,z] of size[w,h,d] with a rotation and color[r,g,b] 
 function drawCube(context, transform, size = [0,0,0], color = [0,0,0,0])
 {
+	// create a 'model' for the cube
     const vertexData = [
 		// Front
 		0.5, 0.5, 0.5,
@@ -101,16 +102,5 @@ function drawCube(context, transform, size = [0,0,0], color = [0,0,0,0])
 	}
 	
 
-	// send position data
-	context.gl.bindBuffer(context.gl.ARRAY_BUFFER,context.positionBuffer);
-	context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(vertices), context.gl.STATIC_DRAW);
-	// send color data
-	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.colorBuffer);
-	context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(colorData), context.gl.STATIC_DRAW);
-	
-	// set transform
-	let MVP = mat4Multiply(transform, context.camera.getMat());
-	context.gl.uniformMatrix4fv(context.MVPloc, false, MVP)
-
-	context.gl.drawArrays(context.gl.TRIANGLES, 0, 36);
+	drawModel(context, vertices, colorData, 36, transform);
 }
