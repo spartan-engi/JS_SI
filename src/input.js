@@ -9,8 +9,7 @@ let key_states = {
 	's' : 0,
 }
 
-let stop=false;
-let dirMouse = [0,0];
+let movMouse = [0,0];
 // key callback
 function onKeyPress(event)
 {
@@ -22,7 +21,6 @@ function onKeyPress(event)
         case 'q':	key_states['q'] = 1;	break;
         case 'w':	key_states['w'] = 1;	break;
         case 's':	key_states['s'] = 1;	break;
-        case 'p':   stop=!(stop);break;
     }
     // print(key_states);
 }
@@ -57,7 +55,6 @@ async function onMouseClick(event)
         document.exitPointerLock();
         print("unlock");
         pointerLock = 0;
-        dirMouse = [0,0];
     }
     else
     {
@@ -73,17 +70,5 @@ function onMouseMove(event)
 {
     if(!pointerLock) return;
     //print([event.movementX, event.movementY]);
-    //let mov = [event.movementX, event.movementY];
-    dirMouse = [event.movementX, event.movementY];
-    /*for(i=0;i<2;i++){
-        if(mov[i]>0){
-            dirMouse[i]=1;
-        }else{
-            if(mov[i]<0){
-                dirMouse[i]=-1;
-            }else{
-                dirMouse[i]=0;
-            }
-        }
-    }*/
+    movMouse = [event.movementX, event.movementY];
 }

@@ -93,8 +93,8 @@ let spaceShip_object = {
 	vPos : [0],		// vector position
 	vCol : [0],		// vector color
 	vQnt : 0,		// quantity of vectors
-	ang : [0,0],
-	z: [-11,-5,-10],
+	ang : [PI2/16,PI2/8],
+	z: [0,0,-1],
 
 	async ready() {
         try {
@@ -132,23 +132,21 @@ let spaceShip_object = {
 	{
 		mov = [0,0,0];
 		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
+		mov[1] = key_states['s'] - key_states['w'];
+		//mov[2] = key_states['e'] - key_states['q'];
 		this.position[0] += mov[0];
 		this.position[1] += mov[1];
 		this.position[2] += mov[2];
 
-		if (!(stop)){
-			this.ang[0] -= PI2/360*dirMouse[1]/10; //mover em y rotaciona em x
-			this.ang[1] += PI2/360*dirMouse[0]/10; // mover em x rotaciona em y
+		if (pointerLock){
+			this.ang[0] += PI2/360*movMouse[1]/10; //mover em y rotaciona em x
+			this.ang[1] += PI2/360*movMouse[0]/10; // mover em x rotaciona em y
 
-			this.ang[0]=Math.min(Math.max(-PI2/4,this.ang[0]),PI2/4);
-			this.ang[1]=Math.min(Math.max(-PI2/4,this.ang[1]),PI2/4);
+			this.ang[0]=Math.min(Math.max(-PI2/16,this.ang[0]),PI2/4);
+			this.ang[1]=Math.min(Math.max(-PI2/8,this.ang[1]),3*PI2/8);
 
-			print([this.ang[0],this.ang[1]]);
-			dirMouse = [0,0];
-		}else{
-			print(this.ang[0],this.ang[1]);
+			//print([this.ang[0],this.ang[1]]);
+			movMouse = [0,0];
 		}
 		
 		let matRot = mat4Rotation(this.ang[0],this.ang[1]);
@@ -156,7 +154,7 @@ let spaceShip_object = {
 		this.z[0] = pos[0];
 		this.z[1] = pos[1];
 		this.z[2] = pos[2];
-
+		
 		return;
 	},
 }
