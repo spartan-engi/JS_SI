@@ -47,6 +47,74 @@ let camera = {
 };
 
 
+/* Variables and objects in game */
+let enemy_group = {
+	enemy_group : function(quantity, enemys){
+		//this.centerPos = centerPosition;
+		this.qnt = quantity;
+		this.enemys = enemys;	// List of enemys{}
+	},
+	removeEnemyInGroup :  function(enemy) {
+		for(let i = 0; i < this.enemys.length; i++){
+			if(enemyinList == enemy){
+				this.enemys.splice(i, 1);
+				break;
+			}
+		}
+	}
+
+};
+
+class enemy {
+	constructor(position = [0,0,0], model){
+		this.pos = position;
+		this.model = model;
+		this.isEnemy = true;
+	}
+};
+
+let player = {
+	isPlayer : true,
+	player : function(health = 3, position = [0,0,0], model){
+		this.health = health;
+		this.pos = position;
+		this.model = model;
+	},
+	updateHealth(health) {
+		this.health += health
+		if (this.health <= 0) {
+			playerDied();
+		}
+	},
+	updatePosition(pos) {
+		this.pos = pos;
+	}
+}
+
+let projectile = {
+	isEnemyProjectile : null,
+	isPlayerProjectile : null,
+	projectile: function(isFrom){
+		// Possible atributes
+		//this.color = color;
+		//this.model = model;
+
+		if(isFrom == "e"){		// projectile shooted by enemy
+			this.isEnemyProjectile = true;
+			this.isPlayerProjectile = false;
+		}
+		else if(isFrom == "p"){		// projectile shooted by player
+			this.isEnemyProjectile = false;
+			this.isPlayerProjectile = true;
+		}
+	}
+}
+
+function playerDied(){
+	alert("You lose :( \
+		Press 'R' to restart the game!");
+	// Stop the game
+}
 
 
 
