@@ -83,10 +83,10 @@ class enemy {
 		// Handle player projectile collision
 		if (object.isPlayerProjectile) {
 			this.remove();
-			object.remove();		// remove projectile
-
-			// add pontuation to the player
+			// add score to the player
 			player.enemyKilled();
+			
+			object.remove();		// remove projectile
 
 			if(enemy_group.removeEnemyInGroup(this))
 				console.log("Removed enemy in enemy_group with sucess");
@@ -105,7 +105,7 @@ class enemy {
 let player = {
 	isPlayer : true,
 	shouldRemove : false,
-	pontuation : 0,
+	score : 0,
 	player : function(health = 3, position = [0,0,0], model){
 		this.health = health;
 		this.pos = position;
@@ -147,10 +147,10 @@ let player = {
 		this.shouldRemove = true;
 	},
 	enemyKilled(){
-		this.addPontuation(100);
+		this.addScore(100);
 	},
-	addPontuation(value) {
-		this.pontuation += value;
+	addScore(value) {
+		this.score += value;
 	},
 	died(){
 		alert("You lose :( \
@@ -275,6 +275,57 @@ let spaceShip_object = {
             this.vPos[basePos + 0] = modelData[baseData + 0] * 52;
             this.vPos[basePos + 1] = modelData[baseData + 1] * 52;
             this.vPos[basePos + 2] = modelData[baseData + 2] * 52;
+
+            // Color data
+            this.vCol[basePos + 0] = modelData[baseData + 3];
+            this.vCol[basePos + 1] = modelData[baseData + 4];
+            this.vCol[basePos + 2] = modelData[baseData + 5];
+        }
+    },
+	draw : function(context)
+	{
+		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
+		return;
+	},
+	process : function(delta)
+	{
+		mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
+		return;
+	},
+}
+
+let enemy_object = {
+	position : [-70,-70,-70],
+	vPos : [0],		// vector position
+	vCol : [0],		// vector color
+	vQnt : 0,		// quantity of vectors
+
+	async ready() {
+        try {
+			model = `${pathModelsBin}enemy.bin`;
+
+            const modelData = await loadModel(model);
+            this.processModelData(modelData);
+        } catch(error) {
+            console.error("Failed to load enemy model:", error);
+        }
+    },
+	processModelData(modelData) {
+		// Count quantity of vectors
+        this.vQnt = modelData.length / 8;
+        for(let i = 0; i < this.vQnt; i++) {
+            // Position data (scaled by 52)
+            const basePos = i * 3;
+            const baseData = i * 8;
+            this.vPos[basePos + 0] = modelData[baseData + 0] / 10;
+            this.vPos[basePos + 1] = modelData[baseData + 1] / 10;
+            this.vPos[basePos + 2] = modelData[baseData + 2] / 10;
 
             // Color data
             this.vCol[basePos + 0] = modelData[baseData + 3];
