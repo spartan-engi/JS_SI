@@ -100,6 +100,14 @@ function main(){
 
 		// compute collisions for all pair of objects
 		physics_process(objects);
+
+		// remove objects that should remove after the colision
+		for(let i = 0; i < objects.length; i++)
+		{
+			if(objects[i].shouldRemove){
+				objects.slice(i, 1);
+			}
+		}
 		
 		// give a chance for all the objects to update themselves
 		for(obj of objects)
