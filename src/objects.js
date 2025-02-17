@@ -58,9 +58,11 @@ let enemy_group = {
 		for(let i = 0; i < this.enemys.length; i++){
 			if(enemyinList == enemy){
 				this.enemys.splice(i, 1);
-				break;
+
+				return true;	// Remotion sucess
 			}
 		}
+		return false	// Remotion failed
 	}
 
 };
@@ -70,30 +72,96 @@ class enemy {
 		this.pos = position;
 		this.model = model;
 		this.isEnemy = true;
-	}
+		this.shouldRemove = false;
+	};
+
+	collided(object) {
+		if (!object) {
+			return false;
+		}
+
+		// Handle player projectile collision
+		if (object.isPlayerProjectile) {
+			this.remove();
+			object.remove();		// remove projectile
+
+			// add pontuation to the player
+			player.enemyKilled();
+
+			if(enemy_group.removeEnemyInGroup(this))
+				console.log("Removed enemy in enemy_group with sucess");
+
+			return true;		
+		}
+		
+		return false;
+	};
+
+	remove(){
+		this.shouldRemove = true;
+	};
 };
 
 let player = {
 	isPlayer : true,
+	shouldRemove : false,
+	pontuation : 0,
 	player : function(health = 3, position = [0,0,0], model){
 		this.health = health;
 		this.pos = position;
 		this.model = model;
 	},
+	collided : function(object) {
+		if (!object) {
+			return false;
+		}
+
+		// Handle enemy projectile collision
+		if(object.isEnemyProjectile){
+			updateHealth(-1);
+
+			object.remove();		// remove projectile
+
+			if(this.health <= 0){
+				this.remove();
+			}
+			return true;
+		}
+		else if(object.isWall){
+			//block movimentation of player
+			// need to implement
+		}
+
+		return false
+	},
 	updateHealth(health) {
 		this.health += health
 		if (this.health <= 0) {
-			playerDied();
+			died();
 		}
 	},
 	updatePosition(pos) {
 		this.pos = pos;
+	},
+	remove(){
+		this.shouldRemove = true;
+	},
+	enemyKilled(){
+		this.addPontuation(100);
+	},
+	addPontuation(value) {
+		this.pontuation += value;
+	},
+	died(){
+		alert("You lose :( \
+			Press 'R' to restart the game!");
 	}
 }
 
 let projectile = {
 	isEnemyProjectile : null,
 	isPlayerProjectile : null,
+	shouldRemove : false,
 	projectile: function(isFrom){
 		// Possible atributes
 		//this.color = color;
@@ -107,13 +175,38 @@ let projectile = {
 			this.isEnemyProjectile = false;
 			this.isPlayerProjectile = true;
 		}
-	}
+	},
+	collided : function(object) {
+		if (!object) {
+			return false;
+		}
+
+		if(this.isPlayerProjectile && object.isEnemy  ||
+			this.isEnemyProjectile && object.isPlayer || object.isWall){
+			this.remove();
+		}
+	},
+
+	remove(){
+		this.shouldRemove = true;
+	},
 }
 
-function playerDied(){
-	alert("You lose :( \
-		Press 'R' to restart the game!");
-	// Stop the game
+let wall = {
+	isWall : true,
+	wall : function(position = [0,0,0], model){
+		this.pos = position;
+		this.model = model;
+	},
+	collided : function(object){
+		if (!object) {
+			return false;
+		}
+
+		// Should happend nothing to the wall
+		// so don't need a response of the wall, the others object will treat this colision
+		return true;
+	}
 }
 
 
@@ -130,6 +223,7 @@ let cube_object = {
 	colision_detected : false,
 	collided : function()
 	{
+		console.log("Cube got colided");
 		this.colision_detected = true;
 		return;
 	},

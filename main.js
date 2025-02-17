@@ -100,6 +100,14 @@ function main(){
 
 		// compute collisions for all pair of objects
 		physics_process(objects);
+
+		// remove objects that should remove after the colision
+		for(let i = 0; i < objects.length; i++)
+		{
+			if(objects[i].shouldRemove){
+				objects.slice(i, 1);
+			}
+		}
 		
 		// give a chance for all the objects to update themselves
 		for(obj of objects)
@@ -161,33 +169,6 @@ function physics_process(physics_objects)
 			//collision!
 			a.collided();
 			b.collided();
-
-			// Check collision types and handle hits
-			if(a.colision_detected || b.colision_detected){
-				if (a.isPlayer && b.isEnemyProjectile) {
-					// Player got hitted
-					physics_objects.splice(j, 1);
-					//or create a removeProjectile(b);
-
-					// When update the life of player and go to 0, will entry in the function playerDied() automatically
-					if(a.updateHealth(-1))		
-						physics_objects.splice(i, 1);	// Remove player in physics_objects if health = 0 (dead)
-				} 	
-				else if (a.isEnemy && b.isPlayerProjectile) {
-					// Enemy got hitted
-					physics_objects.splice(j, 1);
-					//or create a removeProjectile(b);
-
-					enemy_group.removeEnemyInGroup(a);
-
-					physics_objects.splice(i, 1); // Remove enemy
-				}
-				else if (a.isStructure && (b.isPlayerProjectile || b.isEnemyProjectile)) {
-					// Structure got hited, nothing happend
-					physics_objects.splice(j, 1);
-					//or create a removeProjectile(b);
-				}
-			}
 		}
 	}
 	return
