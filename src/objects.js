@@ -16,12 +16,13 @@ let context = {
 let camera = {
 	camera : function(position, upward, forward, near_plane, far_plane)
 	{
-		this.pos    =  position;
+		let obj = spaceShip_object;
+		this.pos = position;
 		this.up     =  upward;
-		this.z      = -forward; // Z vector points 'backwards', funnily enough
+		this.z      = [-forward[0],-forward[1],-forward[2]]; // Z vector points 'backwards', funnily enough
 		this.near   =  near_plane;
 		this.far    =  far_plane;
-
+		
 		// function called to get the camera's VP matrix
 		this.getMat =  function()
 		{
@@ -29,11 +30,14 @@ let camera = {
 
 			// view matrix - from world coordinate to camera relative coordinates
 			// basically only a inverse from the camera transform
-			let view = mat4OrthInverse(mat4Transform([0,0,0], [1,1,1], [1,1,1]));
+			let matCam = mat4Transform(this.pos, [1,1,1], [-1,-1,-1],this.up)
+			this.tranform=mat4Multiply(obj.tranform,matCam);
+			
+			let view = mat4OrthInverse(this.tranform);
 
 			// projection matrix
 			// why the hell does this work again?
-			let proj = mat4projection(1, 500);
+			let proj = mat4projection(this.near, this.far);
 			
 			//these two matricies make the whole camera projection
 			return mat4Multiply(view, proj);
@@ -42,7 +46,11 @@ let camera = {
 			// // clip matrix - from camera coordinates to normalized screen coordinates
 			// // camera will render things from (-250 < x < 250), (250 > y > -250), (-250 < z < 250)
 			// let clip = mat4Transform([0,0,0], [2/canvas.width, 2/canvas.height, 2/500]);
-
+		}
+		this.mov = function()
+		{
+			//this.pos = [obj.position[0]+60,obj.position[1]+150,obj.position[2]+60];	
+			//this.z = [-100,-40,-100];
 		}
 	}
 };
@@ -95,6 +103,7 @@ let spaceShip_object = {
 	vQnt : 0,		// quantity of vectors
 	ang : [PI2/16,PI2/8],
 	z: [0,0,-1],
+	tranform: mat4identity(),
 
 	async ready() {
         try {
@@ -125,14 +134,15 @@ let spaceShip_object = {
     },
 	draw : function(context)
 	{
-		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position, [1,1,1],this.z));
+		this.tranform = mat4Transform(this.position, [1,1,1],this.z);
+		drawModel(context, this.vPos, this.vCol, this.vQnt,this.tranform);
 		return;
 	},
 	process : function(delta)
 	{
 		mov = [0,0,0];
 		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['s'] - key_states['w'];
+		mov[1] = key_states['w'] - key_states['s'];
 		//mov[2] = key_states['e'] - key_states['q'];
 		this.position[0] += mov[0];
 		this.position[1] += mov[1];

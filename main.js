@@ -60,6 +60,7 @@ function main(){
 	
 	// initialization ready, tie everything up into one context structure
 	// this context around instead of making functions with a thousand parameters
+
 	const WebGL = new context.context(gl, positionBuffer, colorBuffer, main_cam, MVPUniformLoc);
 
 
@@ -91,7 +92,8 @@ function main(){
 		let delta = Date.now() - last_T;
 		last_T = Date.now();
 		
-
+		//main_cam.mov();
+		
 		//clean screen
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
