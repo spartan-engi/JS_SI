@@ -56,7 +56,7 @@ function main(){
 	// setup camera object
 	// camera is at origin(0,0,0), pointing towards (1,1,1)
 	// camera creates the projected_view matrix
-	let main_cam = new camera.camera([0,0,0], [0,1,0], [1,1,1], 1, 500);
+	let main_cam = new camera.camera([20,-3,-100], [0,1,0], [0,0,1], 1, 1000);
 	
 	// initialization ready, tie everything up into one context structure
 	// this context around instead of making functions with a thousand parameters
@@ -171,7 +171,7 @@ function physics_process(physics_objects)
 
 // Initialize objects before of the game, if are not converted, it will convert to bin
 function initializeObjects() {
-    objects.push(spaceShip_object, spin_object);
+    objects.push(spaceShip_object, spin_object, cube_object);
     
     // Initialize all models that need setup
     objects.forEach(obj => {

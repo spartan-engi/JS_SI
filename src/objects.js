@@ -16,10 +16,9 @@ let context = {
 let camera = {
 	camera : function(position, upward, forward, near_plane, far_plane)
 	{
-		let obj = spaceShip_object;
 		this.pos = position;
 		this.up     =  upward;
-		this.z      = [-forward[0],-forward[1],-forward[2]]; // Z vector points 'backwards', funnily enough
+		this.z      =  forward; // Z vector points 'backwards', funnily enough
 		this.near   =  near_plane;
 		this.far    =  far_plane;
 		
@@ -30,10 +29,11 @@ let camera = {
 
 			// view matrix - from world coordinate to camera relative coordinates
 			// basically only a inverse from the camera transform
-			let matCam = mat4Transform(this.pos, [1,1,1], [-1,-1,-1],this.up)
-			this.tranform=mat4Multiply(obj.tranform,matCam);
+			let matCam = mat4Transform(this.pos, [1,1,1], this.z, this.up); //relative camera position
 			
-			let view = mat4OrthInverse(this.tranform);
+			// let view = mat4OrthInverse(mat4Multiply(matCam, spaceShip_object.tranform)); // should 'glue' camera to spaceship motion
+			let view = mat4OrthInverse(matCam); // camera stationary
+			// let view = mat4OrthInverse(cube_object.trans); //should put camera __exactly__ where cube is
 
 			// projection matrix
 			// why the hell does this work again?
@@ -63,10 +63,11 @@ let camera = {
 
 // this isn't the right place to declare the objects
 let cube_object = {
-	position : [-70,-70,-70],
+	position : [0,0,-90],
 	size : [24,24,24],
 	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
 	color : [.5,.5,.5],
+	trans : mat4identity(),
 
 	colision_detected : false,
 	collided : function()
@@ -76,34 +77,24 @@ let cube_object = {
 	},
 	draw : function(context)
 	{
-		drawCube(context, mat4Transform(this.position), this.size, this.color);
+		let cube_relative_position = mat4Transform(this.position, [1,1,1], [0,0,-1]);
+		this.trans = mat4Multiply(cube_relative_position, spaceShip_object.tranform);
+		drawCube(context, this.trans, this.size, this.color);
 		return;
 	},
 	process : function(delta)
 	{
-		if(this.colision_detected)	this.color = [1,.5,.5];
-		else						this.color = [.5,.5,.5];
-		this.colision_detected = false;
-
-		mov = [0,0,0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
 		return;
 	},
 }
 
 let spaceShip_object = {
-	position : [-60,-150,-60],
+	position : [60,-50,-100],
 	vPos : [0],		// vector position
 	vCol : [0],		// vector color
 	vQnt : 0,		// quantity of vectors
-	ang : [PI2/16,PI2/8],
-	z: [0,0,-1],
-	tranform: mat4identity(),
+	ang : [0,0],
+	z: [0,0,1],
 
 	async ready() {
         try {
@@ -134,7 +125,7 @@ let spaceShip_object = {
     },
 	draw : function(context)
 	{
-		this.tranform = mat4Transform(this.position, [1,1,1],this.z);
+		this.tranform = mat4Transform(this.position, [1,1,1], this.z);
 		drawModel(context, this.vPos, this.vCol, this.vQnt,this.tranform);
 		return;
 	},
@@ -152,8 +143,8 @@ let spaceShip_object = {
 			this.ang[0] += PI2/360*movMouse[1]/10; //mover em y rotaciona em x
 			this.ang[1] += PI2/360*movMouse[0]/10; // mover em x rotaciona em y
 
-			this.ang[0]=Math.min(Math.max(-PI2/16,this.ang[0]),PI2/4);
-			this.ang[1]=Math.min(Math.max(-PI2/8,this.ang[1]),3*PI2/8);
+			this.ang[0]=Math.min(Math.max(-PI2/4,this.ang[0]),PI2/4);
+			this.ang[1]=Math.min(Math.max(-PI2/4,this.ang[1]),PI2/4);
 
 			//print([this.ang[0],this.ang[1]]);
 			movMouse = [0,0];
@@ -170,7 +161,7 @@ let spaceShip_object = {
 }
 
 let spin_object = {
-	position : [-38,-70,-134],
+	position : [-30,-30,-210],
 	ang : 0.0,
 	draw : function(context)
 	{
