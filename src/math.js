@@ -30,7 +30,15 @@ function vec3normalize(vec)
 	return [vec[0]*isize, vec[1]*isize, vec[2]*isize];
 }
 
-
+function vec4MultplyMat4(vec,mat){
+	let vector = [
+		mat[0]*vec[0] + mat[4]*vec[1] + mat[ 8]*vec[2] + mat[12]*vec[3],
+		mat[1]*vec[0] + mat[5]*vec[1] + mat[ 9]*vec[2] + mat[13]*vec[3],
+		mat[2]*vec[0] + mat[6]*vec[1] + mat[10]*vec[2] + mat[14]*vec[3],
+		mat[3]*vec[0] + mat[7]*vec[1] + mat[11]*vec[2] + mat[15]*vec[3]
+	];
+	return vector;
+}
 
 
 /* matrix math */
@@ -45,6 +53,24 @@ function mat4identity()
 		0,0,0,1,
 	];
 };
+
+// returns rotation matrix 
+function mat4Rotation(angX=0, angY=0){
+	let rotX = [
+		1,         0,          0, 0,
+		0, cos(angX), -sin(angX), 0,
+		0, sin(angX),  cos(angX), 0,
+		0,         0,          0, 1
+	];
+	let rotY = [
+		cos(angY), 0, -sin(angY), 0,
+		        0, 1,          0, 0,
+		sin(angY), 0,  cos(angY), 0,
+		        0, 0,          0, 1
+	];
+	let mat = mat4Multiply(rotX,rotY);
+	return mat;
+}
 
 // returns the matrix for a specific transformation
 // the matrix is orthonormal
@@ -118,11 +144,11 @@ function mat4Multiply(m1, m2)
 
 function mat4Print(mat)
 {
-	console.log('%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n%.3f %.3f %.3f %.3f\n', 
-		mat[0], mat[4], mat[ 8], mat[12],
-		mat[1], mat[5], mat[ 9], mat[13],
-		mat[2], mat[6], mat[10], mat[14],
-		mat[3], mat[7], mat[11], mat[15],
+	console.log(
+		mat[0].toFixed(3), mat[4].toFixed(3), mat[ 8].toFixed(3), mat[12].toFixed(3),'\n',
+		mat[1].toFixed(3), mat[5].toFixed(3), mat[ 9].toFixed(3), mat[13].toFixed(3),'\n',
+		mat[2].toFixed(3), mat[6].toFixed(3), mat[10].toFixed(3), mat[14].toFixed(3),'\n',
+		mat[3].toFixed(3), mat[7].toFixed(3), mat[11].toFixed(3), mat[15].toFixed(3),'\n',
 	);
 }
 
@@ -130,10 +156,22 @@ function mat4Print(mat)
 // and transposing the basis
 function mat4OrthInverse(mat)
 {
-	return [
-		 mat[ 0], mat[ 4], mat[ 8], mat[ 3],
-		 mat[ 1], mat[ 5], mat[ 9], mat[ 7],
-		 mat[ 2], mat[ 6], mat[10], mat[11],
-		-mat[12],-mat[13],-mat[14], mat[15],
+	// find inverse rotation
+	let i_rot = [
+		 mat[ 0], mat[ 4], mat[ 8], 0,
+		 mat[ 1], mat[ 5], mat[ 9], 0,
+		 mat[ 2], mat[ 6], mat[10], 0,
+		       0,       0,       0, 1,
 	];
+	// and inverse translation inverse translation
+	let i_tra = [
+		       1,       0,       0, 0,
+		       0,       1,       0, 0,
+		       0,       0,       1, 0,
+		-mat[12],-mat[13],-mat[14],1,
+	];
+	// and compound them
+	let res = mat4Multiply(i_tra, i_rot);
+
+	return res;
 }

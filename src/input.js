@@ -8,6 +8,8 @@ let key_states = {
 	'w' : 0,
 	's' : 0,
 }
+
+let movMouse = [0,0];
 // key callback
 function onKeyPress(event)
 {
@@ -67,5 +69,6 @@ async function onMouseClick(event)
 function onMouseMove(event)
 {
     if(!pointerLock) return;
-    print([event.movementX, event.movementY]);
+    //print([event.movementX, event.movementY]);
+    movMouse = [event.movementX, event.movementY];
 }
