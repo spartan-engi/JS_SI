@@ -121,7 +121,7 @@ function main(){
 		}
 		// drawCube(WebGL, mat4Transform(cube_pos), [32,32,32], [.8,.5,.5]);
 
-
+		console.log(objects);
 		// makes so this function loops
 		requestAnimationFrame(process);
 	}
@@ -174,10 +174,47 @@ function physics_process(physics_objects)
 	return
 }
 
+// Initializate enemys in group enemys and return all enemys created
+function initializePlayer() {
+	// const position = [-20, -20, -20];
+	const position = [-70, -70, -70];
+	const model = new spaceShip_model(position);
+
+	player.player(3, position, model);
+}
+
+function initializeEnemys() {
+	enemy_group.enemy_group(0, 5, []);
+
+	const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
+
+	for(let i = 0; i < enemysToSpawn; i++){
+		//const position = [i * 20, 0, 0];
+		const position = [(-150 + (i*40)), -30, -70];	// this could change in the final project
+		const model =  new enemy_model(position);
+
+		// Create enemy object
+		const enemy = new Enemy(position, model);
+
+		// Insert enemy object in group_enemy
+		enemy_group.addEnemyInGroup(enemy);
+	}
+}
+
+function initializeWalls() {
+
+}
 
 // Initialize objects before of the game, if are not converted, it will convert to bin
 function initializeObjects() {
-    objects.push(spaceShip_object, spin_object);
+    objects.push(player);
+	
+	// Add all enemys in objects
+	enemy_group.enemys.forEach(enemy => {
+		objects.push(enemy);
+	});
+	
+	console.log(objects);
     
     // Initialize all models that need setup
     objects.forEach(obj => {
@@ -187,5 +224,8 @@ function initializeObjects() {
 
 
 // actually start executing code
+initializePlayer();
+initializeEnemys();
+// inicializeWalls();
 initializeObjects();
 main();
