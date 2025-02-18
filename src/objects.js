@@ -16,9 +16,9 @@ let context = {
 let camera = {
 	camera : function(position, upward, forward, near_plane, far_plane)
 	{
-		this.pos = position;
+		this.pos    = position;
 		this.up     =  upward;
-		this.z      =  forward; // Z vector points 'backwards', funnily enough
+		this.z      =  [-forward[0], -forward[1], -forward[2]]; // Z vector points 'backwards', funnily enough
 		this.near   =  near_plane;
 		this.far    =  far_plane;
 		
@@ -28,12 +28,10 @@ let camera = {
 			// model... is applied by the model itself
 
 			// view matrix - from world coordinate to camera relative coordinates
-			// basically only a inverse from the camera transform
-			let matCam = mat4Transform(this.pos, [1,1,1], this.z, this.up); //relative camera position
-			
-			// let view = mat4OrthInverse(mat4Multiply(matCam, spaceShip_object.tranform)); // should 'glue' camera to spaceship motion
-			let view = mat4OrthInverse(matCam); // camera stationary
-			// let view = mat4OrthInverse(cube_object.trans); //should put camera __exactly__ where cube is
+			// basically only a inverse of the camera transform
+			let camera_position = mat4Transform(this.pos, [1,1,1], this.z, this.up);
+			// 'glues' camera to spaceship motion and rotation
+			let view = mat4OrthInverse(mat4Multiply(camera_position, spaceShip_object.tranform));
 
 			// projection matrix
 			// why the hell does this work again?
@@ -61,13 +59,11 @@ let camera = {
 
 /* Objects declaration */
 
-// this isn't the right place to declare the objects
 let cube_object = {
-	position : [0,0,-90],
+	position : [60,-30,-210],
 	size : [24,24,24],
 	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
 	color : [.5,.5,.5],
-	trans : mat4identity(),
 
 	colision_detected : false,
 	collided : function()
@@ -77,9 +73,8 @@ let cube_object = {
 	},
 	draw : function(context)
 	{
-		let cube_relative_position = mat4Transform(this.position, [1,1,1], [0,0,-1]);
-		this.trans = mat4Multiply(cube_relative_position, spaceShip_object.tranform);
-		drawCube(context, this.trans, this.size, this.color);
+		let transform = mat4Transform(this.position, [1,1,1]);
+		drawCube(context, transform, this.size, this.color);
 		return;
 	},
 	process : function(delta)

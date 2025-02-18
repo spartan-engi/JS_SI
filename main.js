@@ -54,13 +54,12 @@ function main(){
 	gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
 
 	// setup camera object
-	// camera is at origin(0,0,0), pointing towards (1,1,1)
 	// camera creates the projected_view matrix
-	let main_cam = new camera.camera([20,-3,-100], [0,1,0], [0,0,1], 1, 1000);
+	// this is the relative position between the camera and player ship
+	let main_cam = new camera.camera([50,30,-110], [0,1,0], [0,0,1], 1, 1000);
 	
 	// initialization ready, tie everything up into one context structure
 	// this context around instead of making functions with a thousand parameters
-
 	const WebGL = new context.context(gl, positionBuffer, colorBuffer, main_cam, MVPUniformLoc);
 
 

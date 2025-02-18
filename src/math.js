@@ -156,16 +156,22 @@ function mat4Print(mat)
 // and transposing the basis
 function mat4OrthInverse(mat)
 {
-	let res = [
-		 mat[ 0], mat[ 4], mat[ 8], mat[ 3],
-		 mat[ 1], mat[ 5], mat[ 9], mat[ 7],
-		 mat[ 2], mat[ 6], mat[10], mat[11],
-		-mat[12],-mat[13],-mat[14], mat[15],
+	// find inverse rotation
+	let i_rot = [
+		 mat[ 0], mat[ 4], mat[ 8], 0,
+		 mat[ 1], mat[ 5], mat[ 9], 0,
+		 mat[ 2], mat[ 6], mat[10], 0,
+		       0,       0,       0, 1,
 	];
-	let vec_res = vec4MultplyMat4([mat[12],mat[13],mat[14], 0], res);
-	res[12] = vec_res[0];
-	res[13] = vec_res[1];
-	res[14] = vec_res[2];
+	// and inverse translation inverse translation
+	let i_tra = [
+		       1,       0,       0, 0,
+		       0,       1,       0, 0,
+		       0,       0,       1, 0,
+		-mat[12],-mat[13],-mat[14],1,
+	];
+	// and compound them
+	let res = mat4Multiply(i_tra, i_rot);
 
 	return res;
 }
