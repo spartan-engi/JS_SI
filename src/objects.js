@@ -49,10 +49,11 @@ let camera = {
 
 /* Variables and objects in game */
 let enemy_group = {
-	enemy_group : function(quantity, maxQtd = 5, enemys = []){
+	enemy_group : function(quantity, maxQtd = 20, maxQtdPerLine = 5, enemys = []){
 		//this.centerPos = centerPosition;
 		this.qtd = quantity;
 		this.maxQtd = maxQtd;
+		this.maxQtdPerLine = maxQtdPerLine;
 		this.enemys = enemys;	// List of enemys{}
 	},
 	removeEnemyInGroup :  function(enemy) {
@@ -404,13 +405,13 @@ class enemy_model {
 		return;
 	}
 	process(delta){
-		// let mov = [0,0,0];
-		// mov[0] = key_states['a'] - key_states['d'];
-		// mov[1] = key_states['e'] - key_states['q'];
-		// mov[2] = key_states['s'] - key_states['w'];
-		// this.position[0] += mov[0];
-		// this.position[1] += mov[1];
-		// this.position[2] += mov[2];
+		let mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
 		return;
 	}
 }

@@ -95,6 +95,20 @@ function main(){
 		//clean screen
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+		const highestY = checkSpawnEnemy();
+		if(highestY){
+			// Spawn new line
+			for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
+				// Create new line in the position top.
+				const position = [(-200 + (j*40)), highestY + 20, -70];	
+				const model = new enemy_model(position);
+				const enemy = new Enemy(position, model);
+				
+				enemy_group.addEnemyInGroup(enemy);
+				objects.push(enemy);
+			}
+		}
+
 		// WebGL.gl.viewport(0,0, canvas.width/2, canvas.height/2);
 		// console.log(obj);
 
@@ -184,20 +198,27 @@ function initializePlayer() {
 }
 
 function initializeEnemys() {
-	enemy_group.enemy_group(0, 5, []);
+	enemy_group.enemy_group(0, 20, 5, []);
 
 	const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
 
-	for(let i = 0; i < enemysToSpawn; i++){
-		//const position = [i * 20, 0, 0];
-		const position = [(-200 + (i*40)), -30, -70];	// this could change in the final project
-		const model =  new enemy_model(position);
-
-		// Create enemy object
-		const enemy = new Enemy(position, model);
-
-		// Insert enemy object in group_enemy
-		enemy_group.addEnemyInGroup(enemy);
+	let j = 0;
+	
+	for(let i = 0; i < (enemysToSpawn / enemy_group.maxQtdPerLine); i++){
+		for(let j = 0; j < enemy_group.maxQtdPerLine; j++){
+			// assuming that have 5 enemys in each line
+			// with max 20 enemys in group, so -> 4 lines
+			
+			//const position = [i * 20, 0, 0];
+			const position = [(-200 + (j*40)), -30 + (i * 20), -70];	// change the position in the final project
+			const model =  new enemy_model(position);
+	
+			// Create enemy object
+			const enemy = new Enemy(position, model);
+	
+			// Insert enemy object in group_enemy
+			enemy_group.addEnemyInGroup(enemy);
+		}
 	}
 }
 
