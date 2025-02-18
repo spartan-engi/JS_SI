@@ -49,7 +49,7 @@ let camera = {
 
 /* Variables and objects in game */
 let enemy_group = {
-	enemy_group : function(quantity, maxQtd = 5, enemys){
+	enemy_group : function(quantity, maxQtd = 5, enemys = []){
 		//this.centerPos = centerPosition;
 		this.qtd = quantity;
 		this.maxQtd = maxQtd;
@@ -220,13 +220,40 @@ let projectile = {
 	},
 }
 
-let wall = {
-	isWall : true,
-	wall : function(position = [0,0,0], model){
-		this.pos = position;
-		this.model = model;
+let wall_group = {
+	wall_group : function(quantity, maxQtd = 3, walls = []){
+		//this.centerPos = centerPosition;
+		this.qtd = quantity;
+		this.maxQtd = maxQtd;
+		this.walls = walls;	// List of walls{}
 	},
-	collided : function(object){
+	removeWallInGroup :  function(wall) {
+		for(let i = 0; i < this.walls.length; i++){
+			if(this.walls[i] == wall){
+				this.walls.splice(i, 1);
+				this.qtd--;
+				return true;	// Remotion sucess
+			}
+		}
+		return false	// Remotion failed
+	},
+	addWallInGroup(wall) {
+		if (this.qtd < this.maxQtd) {
+            this.walls.push(wall);
+            this.qtd++;
+            return true;
+        }
+        return false;
+	}
+}
+
+class Wall {
+    constructor(position = [0, 0, 0], model) {
+        this.isWall = true;
+        this.pos = position;
+        this.model = model;
+    }
+	collided(object){
 		if (!object) {
 			return false;
 		}
@@ -234,6 +261,15 @@ let wall = {
 		// Should happend nothing to the wall
 		// so don't need a response of the wall, the others object will treat this colision
 		return true;
+	}
+	ready(){
+		this.model.ready();
+	}
+	process(delta){
+		this.model.process(delta);
+	}
+	draw(context){
+		this.model.draw(context);
 	}
 }
 
@@ -287,7 +323,7 @@ class spaceShip_model {
 
 	async ready() {
         try {
-			const model = `${pathModelsBin}viper.bin`;
+			const model = `${pathModelsBin}spaceShip.bin`;
 
             const modelData = await loadModel(model);
             this.processModelData(modelData);
@@ -328,7 +364,6 @@ class spaceShip_model {
 	}
 }
 
-// criar uma classe?
 class enemy_model {
 	constructor(position = [-70, -70, -70]) {
         this.position = position;
@@ -369,13 +404,57 @@ class enemy_model {
 		return;
 	}
 	process(delta){
-		let mov = [0,0,0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
+		// let mov = [0,0,0];
+		// mov[0] = key_states['a'] - key_states['d'];
+		// mov[1] = key_states['e'] - key_states['q'];
+		// mov[2] = key_states['s'] - key_states['w'];
+		// this.position[0] += mov[0];
+		// this.position[1] += mov[1];
+		// this.position[2] += mov[2];
+		return;
+	}
+}
+
+class wall_model {
+	constructor(position = [-70, 50, -70]) {
+        this.position = position;
+        this.vPos = [0];  // vector position
+        this.vCol = [0];  // vector color
+        this.vQnt = 0;    // quantity of vectors
+    }
+
+	async ready() {
+        try {
+			const model = `${pathModelsBin}wall.bin`;
+
+            const modelData = await loadModel(model);
+            this.processModelData(modelData);
+        } catch(error) {
+            console.error("Failed to load wall model:", error);
+        }
+    }
+	processModelData(modelData) {
+		// Count quantity of vectors
+        this.vQnt = modelData.length / 8;
+        for(let i = 0; i < this.vQnt; i++) {
+            // Position data (scaled by 52)
+            const basePos = i * 3;
+            const baseData = i * 8;
+            this.vPos[basePos + 0] = modelData[baseData + 0] / 20;
+            this.vPos[basePos + 1] = modelData[baseData + 1] / 20;
+            this.vPos[basePos + 2] = modelData[baseData + 2] / 20;
+
+            // Color data
+            this.vCol[basePos + 0] = modelData[baseData + 3];
+            this.vCol[basePos + 1] = modelData[baseData + 4];
+            this.vCol[basePos + 2] = modelData[baseData + 5];
+        }
+    }
+	draw(context) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
+		return;
+	}
+	process(delta){
 		return;
 	}
 }

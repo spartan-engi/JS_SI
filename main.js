@@ -190,7 +190,7 @@ function initializeEnemys() {
 
 	for(let i = 0; i < enemysToSpawn; i++){
 		//const position = [i * 20, 0, 0];
-		const position = [(-150 + (i*40)), -30, -70];	// this could change in the final project
+		const position = [(-200 + (i*40)), -30, -70];	// this could change in the final project
 		const model =  new enemy_model(position);
 
 		// Create enemy object
@@ -201,8 +201,23 @@ function initializeEnemys() {
 	}
 }
 
-function initializeWalls() {
+function inicializeWalls() {
+	// set the position on the walls 
+	wall_group.wall_group(0, 5, []);
 
+	const wallsToAdd = wall_group.maxQtd - wall_group.qtd;
+
+	for(let i = 0; i < wallsToAdd; i++){
+		//const position = [i * 20, 0, 0];
+		const position = [(-250 + (i*80)), -30, 70];	// this could change in the final project
+		const model =  new wall_model(position);
+
+		// Create wall object
+		const wall = new Wall(position, model);
+
+		// Insert wall object in group_enemy
+		wall_group.addWallInGroup(wall);
+	}
 }
 
 // Initialize objects before of the game, if are not converted, it will convert to bin
@@ -212,6 +227,10 @@ function initializeObjects() {
 	// Add all enemys in objects
 	enemy_group.enemys.forEach(enemy => {
 		objects.push(enemy);
+	});
+	// Add all wall in objects
+	wall_group.walls.forEach(wall => {
+		objects.push(wall);
 	});
 	
 	console.log(objects);
@@ -226,6 +245,6 @@ function initializeObjects() {
 // actually start executing code
 initializePlayer();
 initializeEnemys();
-// inicializeWalls();
+inicializeWalls();
 initializeObjects();
 main();
