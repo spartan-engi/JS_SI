@@ -168,34 +168,68 @@ let player = {
 let projectile = {
 	isEnemyProjectile : null,
 	isPlayerProjectile : null,
+	collision_mask : 0,
 	shouldRemove : false,
-	projectile: function(isFrom){
+	position     : [0,0,0],
+	size         : [4,4,20],
+	color        : [0,0,0],
+	dir          : [0,0,0],
+	lifetime     : 500.0,
+	speed        : 1.0,
+	projectile: function(isFrom, direction, position){
+
+		this.dir      = [direction[0], direction[1], direction[2]];
+		this.position = [position[0], position[1], position[2]];
+		this.size     = [4,4,20];
+		this.lifetime = 500.0;
+		this.speed    = 1.0;
 		// Possible atributes
-		//this.color = color;
 		//this.model = model;
 
 		if(isFrom == "e"){		// projectile shooted by enemy
 			this.isEnemyProjectile = true;
 			this.isPlayerProjectile = false;
+			this.color = [1.0,0.2,0.1];
+			this.collision_mask = 1;
 		}
 		else if(isFrom == "p"){		// projectile shooted by player
 			this.isEnemyProjectile = false;
 			this.isPlayerProjectile = true;
-		}
-	},
-	collided : function(object) {
-		if (!object) {
-			return false;
+			this.color = [0.0,0.2,1.0];
+			this.collision_mask = 2;
 		}
 
-		if(this.isPlayerProjectile && object.isEnemy  ||
+		this.collided = function(object) {
+			if (!object) {
+				return false;
+			}
+
+			if(this.isPlayerProjectile && object.isEnemy  ||
 			this.isEnemyProjectile && object.isPlayer || object.isWall){
-			this.remove();
+				this.remove();
+			}
 		}
-	},
-
-	remove(){
-		this.shouldRemove = true;
+		this.process = function(delta){
+			
+			// bullet fizzle out, outta range too.
+			this.lifetime -= delta;
+			if(this.lifetime < 0){
+				this.remove();
+				print("fizzle!");
+				return;
+			}
+			
+			// move with speed
+			this.position[0] += this.dir[0]*this.speed*delta;
+			this.position[1] += this.dir[1]*this.speed*delta;
+			this.position[2] += this.dir[2]*this.speed*delta;
+		}
+		this.draw = function(context){
+			drawCube(context, mat4Transform(this.position, [1,1,1], this.dir), this.size, this.color);
+		}
+		this.remove = function(){
+			this.shouldRemove = true;
+		}
 	},
 }
 
@@ -223,7 +257,7 @@ let wall = {
 let cube_object = {
 	position : [60,-30,-210],
 	size : [24,24,24],
-	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
+	collision_mask : 2,		// defines which group of objects the object interracts with (binary)
 	color : [.5,.5,.5],
 
 	colision_detected : false,
@@ -236,6 +270,9 @@ let cube_object = {
 	draw : function(context)
 	{
 		let transform = mat4Transform(this.position, [1,1,1]);
+		if(this.colision_detected) this.color = [.5,.8,.5];
+		else                       this.color = [.5,.5,.5];
+		this.colision_detected = false;
 		drawCube(context, transform, this.size, this.color);
 		return;
 	},
@@ -312,7 +349,15 @@ let spaceShip_object = {
 		this.z[0] = pos[0];
 		this.z[1] = pos[1];
 		this.z[2] = pos[2];
-		
+
+		if(click)
+		{
+			click = 0;
+			let b = new projectile.projectile("p", this.z, this.position);
+			objects.push(b);
+			print("bang!");
+		}
+
 		return;
 	},
 }
@@ -369,14 +414,21 @@ let enemy_object = {
 }
 
 let spin_object = {
+	collision_mask : 2,
 	position : [-30,-30,-210],
+	size : [32,32,32],
 	ang : 0.0,
 	draw : function(context)
 	{
 		// find the rotated 'Z' axis of this model
 		let z = [sin(this.ang), 0, cos(this.ang)];
 		// and the transform matrix is constructed around this vector
-		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
+		drawCube(context, mat4Transform(this.position, [1,1,1], z), this.size, [.8,.5,.5]);
+		return;
+	},
+	collided : function(object)
+	{
+		print("spin got collided");
 		return;
 	},
 	process : function(delta)
