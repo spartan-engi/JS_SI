@@ -201,6 +201,9 @@ function initializePlayer() {
 function initializeEnemys() {
 	enemy_group.enemy_group(0, 20, 5, []);
 
+	//shared model
+	THE_enemy_model =  new enemy_model();
+
 	const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
 
 	let j = 0;
@@ -212,10 +215,9 @@ function initializeEnemys() {
 			
 			//const position = [i * 20, 0, 0];
 			const position = [(-200 + (j*40)), -30 + (i * 20), -70];	// change the position in the final project
-			const model =  new enemy_model(position);
 	
 			// Create enemy object
-			const enemy = new Enemy(position, model);
+			const enemy = new Enemy(position, THE_enemy_model);
 	
 			// Insert enemy object in group_enemy
 			enemy_group.addEnemyInGroup(enemy);

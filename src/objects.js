@@ -351,14 +351,22 @@ class spaceShip_model {
 	}
 }
 
+
+// reuse model to avoid unnecessary lag
+let THE_enemy_model;
+
 class enemy_model {
 	constructor() {
         this.vPos = [0];  // vector position
         this.vCol = [0];  // vector color
         this.vQnt = 0;    // quantity of vectors
+		this.loaded = false; // has this model already been loaded
     }
 
 	async ready() {
+		// no need, already ready
+		if(this.loaded) return;
+
         try {
 			const model = `${pathModelsBin}enemy.bin`;
 
