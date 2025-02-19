@@ -56,25 +56,35 @@ let camera = {
 
 /* Variables and objects in game */
 let enemy_group = {
-	enemy_group : function(quantity, enemys){
+	enemy_group : function(quantity, maxQtd = 20, maxQtdPerLine = 5, enemys = []){
 		//this.centerPos = centerPosition;
-		this.qnt = quantity;
+		this.qtd = quantity;
+		this.maxQtd = maxQtd;
+		this.maxQtdPerLine = maxQtdPerLine;
 		this.enemys = enemys;	// List of enemys{}
 	},
 	removeEnemyInGroup :  function(enemy) {
 		for(let i = 0; i < this.enemys.length; i++){
-			if(enemyinList == enemy){
+			if(this.enemys[i] == enemy){
 				this.enemys.splice(i, 1);
-
+				this.qtd--;
 				return true;	// Remotion sucess
 			}
 		}
 		return false	// Remotion failed
+	},
+	addEnemyInGroup(enemy) {
+		if (this.qtd < this.maxQtd) {
+            this.enemys.push(enemy);
+            this.qtd++;
+            return true;
+        }
+        return false;
 	}
 
 };
 
-class enemy {
+class Enemy {
 	constructor(position = [0,0,0], model){
 		this.pos = position;
 		this.model = model;
@@ -107,6 +117,16 @@ class enemy {
 	remove(){
 		this.shouldRemove = true;
 	};
+	ready(){
+		this.model.ready();
+	};
+	process(delta){
+		this.model.process(delta);
+	};
+
+	draw(context){
+		this.model.draw(context);
+	}
 };
 
 let player = {
@@ -162,6 +182,15 @@ let player = {
 	died(){
 		alert("You lose :( \
 			Press 'R' to restart the game!");
+	},
+	ready(){
+		this.model.ready();
+	},
+	process(delta){
+		this.model.process(delta);
+	},
+	draw(context){
+		this.model.draw(context);
 	}
 }
 
@@ -199,13 +228,40 @@ let projectile = {
 	},
 }
 
-let wall = {
-	isWall : true,
-	wall : function(position = [0,0,0], model){
-		this.pos = position;
-		this.model = model;
+let wall_group = {
+	wall_group : function(quantity, maxQtd = 3, walls = []){
+		//this.centerPos = centerPosition;
+		this.qtd = quantity;
+		this.maxQtd = maxQtd;
+		this.walls = walls;	// List of walls{}
 	},
-	collided : function(object){
+	removeWallInGroup :  function(wall) {
+		for(let i = 0; i < this.walls.length; i++){
+			if(this.walls[i] == wall){
+				this.walls.splice(i, 1);
+				this.qtd--;
+				return true;	// Remotion sucess
+			}
+		}
+		return false	// Remotion failed
+	},
+	addWallInGroup(wall) {
+		if (this.qtd < this.maxQtd) {
+            this.walls.push(wall);
+            this.qtd++;
+            return true;
+        }
+        return false;
+	}
+}
+
+class Wall {
+    constructor(position = [0, 0, 0], model) {
+        this.isWall = true;
+        this.pos = position;
+        this.model = model;
+    }
+	collided(object){
 		if (!object) {
 			return false;
 		}
@@ -213,6 +269,15 @@ let wall = {
 		// Should happend nothing to the wall
 		// so don't need a response of the wall, the others object will treat this colision
 		return true;
+	}
+	ready(){
+		this.model.ready();
+	}
+	process(delta){
+		this.model.process(delta);
+	}
+	draw(context){
+		this.model.draw(context);
 	}
 }
 
@@ -245,24 +310,26 @@ let cube_object = {
 	},
 }
 
-let spaceShip_object = {
-	position : [60,-50,-100],
-	vPos : [0],		// vector position
-	vCol : [0],		// vector color
-	vQnt : 0,		// quantity of vectors
-	ang : [0,0],
-	z: [0,0,1],
+class spaceShip_model {
+	constructor(position = [-70, -70, -70]) {
+		this.position = position;
+		this.vPos = [0];  // vector position
+		this.vCol = [0];  // vector color
+		this.vQnt = 0;    // quantity of vectors
+		this.ang  = [0,0];
+		this.z    = [0,0,1];
+	}
 
 	async ready() {
         try {
-			model = `${pathModelsBin}viper.bin`;
+			const model = `${pathModelsBin}spaceShip.bin`;
 
             const modelData = await loadModel(model);
             this.processModelData(modelData);
         } catch(error) {
             console.error("Failed to load spaceship model:", error);
         }
-    },
+    }
 	processModelData(modelData) {
 		// Count quantity of vectors
         this.vQnt = modelData.length / 8;
@@ -270,25 +337,23 @@ let spaceShip_object = {
             // Position data (scaled by 52)
             const basePos = i * 3;
             const baseData = i * 8;
-            this.vPos[basePos + 0] = modelData[baseData + 0] * 52;
-            this.vPos[basePos + 1] = modelData[baseData + 1] * 52;
-            this.vPos[basePos + 2] = modelData[baseData + 2] * 52;
+            this.vPos[basePos + 0] = modelData[baseData + 0] * 20;
+            this.vPos[basePos + 1] = modelData[baseData + 1] * 20;
+            this.vPos[basePos + 2] = modelData[baseData + 2] * 20;
 
             // Color data
             this.vCol[basePos + 0] = modelData[baseData + 3];
             this.vCol[basePos + 1] = modelData[baseData + 4];
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
-    },
-	draw : function(context)
-	{
+    }
+	draw(context) {
 		this.tranform = mat4Transform(this.position, [1,1,1], this.z);
-		drawModel(context, this.vPos, this.vCol, this.vQnt,this.tranform);
+		drawModel(context, this.vPos, this.vCol, this.vQnt, this.tranform);
 		return;
-	},
-	process : function(delta)
-	{
-		mov = [0,0,0];
+	}
+	process(delta){
+		let mov = [0, 0, 0];
 		mov[0] = key_states['a'] - key_states['d'];
 		mov[1] = key_states['w'] - key_states['s'];
 		//mov[2] = key_states['e'] - key_states['q'];
@@ -314,25 +379,27 @@ let spaceShip_object = {
 		this.z[2] = pos[2];
 		
 		return;
-	},
+	}
 }
 
-let enemy_object = {
-	position : [-70,-70,-70],
-	vPos : [0],		// vector position
-	vCol : [0],		// vector color
-	vQnt : 0,		// quantity of vectors
+class enemy_model {
+	constructor(position = [-70, -70, -70]) {
+        this.position = position;
+        this.vPos = [0];  // vector position
+        this.vCol = [0];  // vector color
+        this.vQnt = 0;    // quantity of vectors
+    }
 
 	async ready() {
         try {
-			model = `${pathModelsBin}enemy.bin`;
+			const model = `${pathModelsBin}enemy.bin`;
 
             const modelData = await loadModel(model);
             this.processModelData(modelData);
         } catch(error) {
             console.error("Failed to load enemy model:", error);
         }
-    },
+    }
 	processModelData(modelData) {
 		// Count quantity of vectors
         this.vQnt = modelData.length / 8;
@@ -340,24 +407,22 @@ let enemy_object = {
             // Position data (scaled by 52)
             const basePos = i * 3;
             const baseData = i * 8;
-            this.vPos[basePos + 0] = modelData[baseData + 0] / 10;
-            this.vPos[basePos + 1] = modelData[baseData + 1] / 10;
-            this.vPos[basePos + 2] = modelData[baseData + 2] / 10;
+            this.vPos[basePos + 0] = modelData[baseData + 0] / 40;
+            this.vPos[basePos + 1] = modelData[baseData + 1] / 40;
+            this.vPos[basePos + 2] = modelData[baseData + 2] / 40;
 
             // Color data
             this.vCol[basePos + 0] = modelData[baseData + 3];
             this.vCol[basePos + 1] = modelData[baseData + 4];
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
-    },
-	draw : function(context)
-	{
+    }
+	draw(context) {
 		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
 		return;
-	},
-	process : function(delta)
-	{
-		mov = [0,0,0];
+	}
+	process(delta){
+		let mov = [0,0,0];
 		mov[0] = key_states['a'] - key_states['d'];
 		mov[1] = key_states['e'] - key_states['q'];
 		mov[2] = key_states['s'] - key_states['w'];
@@ -365,7 +430,51 @@ let enemy_object = {
 		this.position[1] += mov[1];
 		this.position[2] += mov[2];
 		return;
-	},
+	}
+}
+
+class wall_model {
+	constructor(position = [-70, 50, -70]) {
+        this.position = position;
+        this.vPos = [0];  // vector position
+        this.vCol = [0];  // vector color
+        this.vQnt = 0;    // quantity of vectors
+    }
+
+	async ready() {
+        try {
+			const model = `${pathModelsBin}wall.bin`;
+
+            const modelData = await loadModel(model);
+            this.processModelData(modelData);
+        } catch(error) {
+            console.error("Failed to load wall model:", error);
+        }
+    }
+	processModelData(modelData) {
+		// Count quantity of vectors
+        this.vQnt = modelData.length / 8;
+        for(let i = 0; i < this.vQnt; i++) {
+            // Position data (scaled by 52)
+            const basePos = i * 3;
+            const baseData = i * 8;
+            this.vPos[basePos + 0] = modelData[baseData + 0] / 20;
+            this.vPos[basePos + 1] = modelData[baseData + 1] / 20;
+            this.vPos[basePos + 2] = modelData[baseData + 2] / 20;
+
+            // Color data
+            this.vCol[basePos + 0] = modelData[baseData + 3];
+            this.vCol[basePos + 1] = modelData[baseData + 4];
+            this.vCol[basePos + 2] = modelData[baseData + 5];
+        }
+    }
+	draw(context) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
+		return;
+	}
+	process(delta){
+		return;
+	}
 }
 
 let spin_object = {

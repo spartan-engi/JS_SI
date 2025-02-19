@@ -97,6 +97,20 @@ function main(){
 		//clean screen
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+		const highestY = checkSpawnEnemy();
+		if(highestY){
+			// Spawn new line
+			for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
+				// Create new line in the position top.
+				const position = [(-200 + (j*40)), highestY + 20, -70];	
+				const model = new enemy_model(position);
+				const enemy = new Enemy(position, model);
+				
+				enemy_group.addEnemyInGroup(enemy);
+				objects.push(enemy);
+			}
+		}
+
 		// WebGL.gl.viewport(0,0, canvas.width/2, canvas.height/2);
 		// console.log(obj);
 
@@ -123,7 +137,7 @@ function main(){
 		}
 		// drawCube(WebGL, mat4Transform(cube_pos), [32,32,32], [.8,.5,.5]);
 
-
+		console.log(objects);
 		// makes so this function loops
 		requestAnimationFrame(process);
 	}
@@ -176,10 +190,73 @@ function physics_process(physics_objects)
 	return
 }
 
+// Initializate enemys in group enemys and return all enemys created
+function initializePlayer() {
+	// const position = [-20, -20, -20];
+	const position = [-70, -70, -70];
+	const model = new spaceShip_model(position);
+
+	player.player(3, position, model);
+}
+
+function initializeEnemys() {
+	enemy_group.enemy_group(0, 20, 5, []);
+
+	const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
+
+	let j = 0;
+	
+	for(let i = 0; i < (enemysToSpawn / enemy_group.maxQtdPerLine); i++){
+		for(let j = 0; j < enemy_group.maxQtdPerLine; j++){
+			// assuming that have 5 enemys in each line
+			// with max 20 enemys in group, so -> 4 lines
+			
+			//const position = [i * 20, 0, 0];
+			const position = [(-200 + (j*40)), -30 + (i * 20), -70];	// change the position in the final project
+			const model =  new enemy_model(position);
+	
+			// Create enemy object
+			const enemy = new Enemy(position, model);
+	
+			// Insert enemy object in group_enemy
+			enemy_group.addEnemyInGroup(enemy);
+		}
+	}
+}
+
+function inicializeWalls() {
+	// set the position on the walls 
+	wall_group.wall_group(0, 5, []);
+
+	const wallsToAdd = wall_group.maxQtd - wall_group.qtd;
+
+	for(let i = 0; i < wallsToAdd; i++){
+		//const position = [i * 20, 0, 0];
+		const position = [(-250 + (i*80)), -30, 70];	// this could change in the final project
+		const model =  new wall_model(position);
+
+		// Create wall object
+		const wall = new Wall(position, model);
+
+		// Insert wall object in group_enemy
+		wall_group.addWallInGroup(wall);
+	}
+}
 
 // Initialize objects before of the game, if are not converted, it will convert to bin
 function initializeObjects() {
-    objects.push(spaceShip_object, spin_object, cube_object);
+    objects.push(player);
+	
+	// Add all enemys in objects
+	enemy_group.enemys.forEach(enemy => {
+		objects.push(enemy);
+	});
+	// Add all wall in objects
+	wall_group.walls.forEach(wall => {
+		objects.push(wall);
+	});
+	
+	console.log(objects);
     
     // Initialize all models that need setup
     objects.forEach(obj => {
@@ -189,5 +266,8 @@ function initializeObjects() {
 
 
 // actually start executing code
+initializePlayer();
+initializeEnemys();
+inicializeWalls();
 initializeObjects();
 main();
