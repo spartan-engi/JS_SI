@@ -195,7 +195,7 @@ function initializePlayer() {
 	const position = [-70, -70, -70];
 	const model = new spaceShip_model(position);
 
-	player.player(3, position, model);
+	player.init(3, position, model);
 }
 
 function initializeEnemys() {

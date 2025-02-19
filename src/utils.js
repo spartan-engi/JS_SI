@@ -22,8 +22,8 @@ function checkSpawnEnemy(){
 	let highestY = -Infinity;
 
 	for (let enemy of enemy_group.enemys) {
-        if (enemy.pos[1] > highestY) {
-            highestY = enemy.pos[1];
+        if (enemy.position[1] > highestY) {
+            highestY = enemy.position[1];
         }
     }
 

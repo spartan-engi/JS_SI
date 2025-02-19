@@ -31,7 +31,7 @@ let camera = {
 			// basically only a inverse of the camera transform
 			let camera_position = mat4Transform(this.pos, [1,1,1], this.z, this.up);
 			// 'glues' camera to spaceship motion and rotation
-			let view = mat4OrthInverse(mat4Multiply(camera_position, player.model.transform));
+			let view = mat4OrthInverse(mat4Multiply(camera_position, player.transform));
 
 			// projection matrix
 			// why the hell does this work again?
@@ -86,7 +86,7 @@ let enemy_group = {
 
 class Enemy {
 	constructor(position = [0,0,0], model){
-		this.pos = position;
+		this.position = position;
 		this.model = model;
 		this.isEnemy = true;
 		this.shouldRemove = false;
@@ -121,22 +121,37 @@ class Enemy {
 		this.model.ready();
 	};
 	process(delta){
-		this.model.process(delta);
+		let mov = [0,0,0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['e'] - key_states['q'];
+		mov[2] = key_states['s'] - key_states['w'];
+		this.position[0] += mov[0];
+		this.position[1] += mov[1];
+		this.position[2] += mov[2];
 	};
 
 	draw(context){
-		this.model.draw(context);
+		this.model.draw(context, mat4Transform(this.position));
 	}
 };
 
 let player = {
-	isPlayer : true,
+	isPlayer     : true,
 	shouldRemove : false,
-	score : 0,
-	player : function(health = 3, position = [0,0,0], model){
+	score        : 0,
+	health       : 3,
+	position     : [0,0,0],
+	ang          : [0,0],
+	z            : [0,0,1],
+	transform    : 0,
+	speed        : 0.08,
+
+	init : function(health = 3, position = [0,0,0], model){
 		this.health = health;
-		this.pos = position;
+		this.position = position;
+		this.transform = mat4identity();
 		this.model = model;
+		this.speed = 0.08;
 	},
 	collided : function(object) {
 		if (!object) {
@@ -146,8 +161,6 @@ let player = {
 		// Handle enemy projectile collision
 		if(object.isEnemyProjectile){
 			updateHealth(-1);
-
-			object.remove();		// remove projectile
 
 			if(this.health <= 0){
 				this.remove();
@@ -167,9 +180,6 @@ let player = {
 			died();
 		}
 	},
-	updatePosition(pos) {
-		this.pos = pos;
-	},
 	remove(){
 		this.shouldRemove = true;
 	},
@@ -187,10 +197,33 @@ let player = {
 		this.model.ready();
 	},
 	process(delta){
-		this.model.process(delta);
+		let mov = [0, 0, 0];
+		mov[0] = key_states['a'] - key_states['d'];
+		mov[1] = key_states['w'] - key_states['s'];
+		//mov[2] = key_states['e'] - key_states['q'];
+		this.position[0] += mov[0] * delta * this.speed;
+		this.position[1] += mov[1] * delta * this.speed;
+		this.position[2] += mov[2] * delta * this.speed;
+
+		if (pointerLock){
+			this.ang[0] += PI2/360*movMouse[1]/10; //mover em y rotaciona em x
+			this.ang[1] += PI2/360*movMouse[0]/10; // mover em x rotaciona em y
+
+			this.ang[0]=Math.min(Math.max(-PI2/4,this.ang[0]),PI2/4);
+			this.ang[1]=Math.min(Math.max(-PI2/4,this.ang[1]),PI2/4);
+
+			//print([this.ang[0],this.ang[1]]);
+			movMouse = [0,0];
+		}
+		
+		let matRot = mat4Rotation(this.ang[0],this.ang[1]);
+		this.z = vec4MultplyMat4([0,0,-1,1],matRot);
+		
+		return;
 	},
 	draw(context){
-		this.model.draw(context);
+		this.transform = mat4Transform(this.position, [1,1,1], this.z);
+		this.model.draw(context, this.transform);
 	}
 }
 
@@ -198,6 +231,7 @@ let projectile = {
 	isEnemyProjectile : null,
 	isPlayerProjectile : null,
 	shouldRemove : false,
+
 	projectile: function(isFrom){
 		// Possible atributes
 		//this.color = color;
@@ -213,10 +247,6 @@ let projectile = {
 		}
 	},
 	collided : function(object) {
-		if (!object) {
-			return false;
-		}
-
 		if(this.isPlayerProjectile && object.isEnemy  ||
 			this.isEnemyProjectile && object.isPlayer || object.isWall){
 			this.remove();
@@ -256,28 +286,24 @@ let wall_group = {
 }
 
 class Wall {
-    constructor(position = [0, 0, 0], model) {
-        this.isWall = true;
-        this.pos = position;
-        this.model = model;
-    }
+		constructor(position = [0, 0, 0], model) {
+		this.isWall = true;
+		this.position = position;
+		this.model = model;
+	}
 	collided(object){
-		if (!object) {
-			return false;
-		}
-
-		// Should happend nothing to the wall
-		// so don't need a response of the wall, the others object will treat this colision
+		// Nothing should happen to the wall
+		// so don't need a response for it, other objects will treat this colision
 		return true;
 	}
 	ready(){
 		this.model.ready();
 	}
 	process(delta){
-		this.model.process(delta);
+		return;
 	}
 	draw(context){
-		this.model.draw(context);
+		this.model.draw(context, mat4Transform(this.position));
 	}
 }
 
@@ -311,13 +337,10 @@ let cube_object = {
 }
 
 class spaceShip_model {
-	constructor(position = [-70, -70, -70]) {
-		this.position = position;
+	constructor() {
 		this.vPos = [0];  // vector position
 		this.vCol = [0];  // vector color
 		this.vQnt = 0;    // quantity of vectors
-		this.ang  = [0,0];
-		this.z    = [0,0,1];
 	}
 
 	async ready() {
@@ -347,44 +370,14 @@ class spaceShip_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context) {
-		this.transform = mat4Transform(this.position, [1,1,1], this.z);
-		drawModel(context, this.vPos, this.vCol, this.vQnt, this.transform);
-		return;
-	}
-	process(delta){
-		let mov = [0, 0, 0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['w'] - key_states['s'];
-		//mov[2] = key_states['e'] - key_states['q'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
-
-		if (pointerLock){
-			this.ang[0] += PI2/360*movMouse[1]/10; //mover em y rotaciona em x
-			this.ang[1] += PI2/360*movMouse[0]/10; // mover em x rotaciona em y
-
-			this.ang[0]=Math.min(Math.max(-PI2/4,this.ang[0]),PI2/4);
-			this.ang[1]=Math.min(Math.max(-PI2/4,this.ang[1]),PI2/4);
-
-			//print([this.ang[0],this.ang[1]]);
-			movMouse = [0,0];
-		}
-		
-		let matRot = mat4Rotation(this.ang[0],this.ang[1]);
-		let pos = vec4MultplyMat4([0,0,-1,1],matRot);
-		this.z[0] = pos[0];
-		this.z[1] = pos[1];
-		this.z[2] = pos[2];
-		
+	draw(context, transform) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
 		return;
 	}
 }
 
 class enemy_model {
-	constructor(position = [-70, -70, -70]) {
-        this.position = position;
+	constructor() {
         this.vPos = [0];  // vector position
         this.vCol = [0];  // vector color
         this.vQnt = 0;    // quantity of vectors
@@ -417,25 +410,14 @@ class enemy_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context) {
-		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
-		return;
-	}
-	process(delta){
-		let mov = [0,0,0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
+	draw(context, transform) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
 		return;
 	}
 }
 
 class wall_model {
-	constructor(position = [-70, 50, -70]) {
-        this.position = position;
+	constructor() {
         this.vPos = [0];  // vector position
         this.vCol = [0];  // vector color
         this.vQnt = 0;    // quantity of vectors
@@ -468,11 +450,8 @@ class wall_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context) {
-		drawModel(context, this.vPos, this.vCol, this.vQnt, mat4Transform(this.position));
-		return;
-	}
-	process(delta){
+	draw(context, transform) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
 		return;
 	}
 }
