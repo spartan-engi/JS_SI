@@ -309,32 +309,7 @@ class Wall {
 
 
 
-/* Objects declaration */
-
-let cube_object = {
-	position : [60,-30,-210],
-	size : [24,24,24],
-	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
-	color : [.5,.5,.5],
-
-	colision_detected : false,
-	collided : function()
-	{
-		console.log("Cube got colided");
-		this.colision_detected = true;
-		return;
-	},
-	draw : function(context)
-	{
-		let transform = mat4Transform(this.position, [1,1,1]);
-		drawCube(context, transform, this.size, this.color);
-		return;
-	},
-	process : function(delta)
-	{
-		return;
-	},
-}
+/* Models declaration */
 
 class spaceShip_model {
 	constructor() {
@@ -456,21 +431,46 @@ class wall_model {
 	}
 }
 
-let spin_object = {
-	position : [-30,-30,-210],
-	ang : 0.0,
-	draw : function(context)
-	{
-		// find the rotated 'Z' axis of this model
-		let z = [sin(this.ang), 0, cos(this.ang)];
-		// and the transform matrix is constructed around this vector
-		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
-		return;
-	},
-	process : function(delta)
-	{
-		// increment the angle of rotation a bit every frame
-		this.ang += delta/500;
-		return;
-	},
-}
+
+// let cube_object = {
+// 	position : [60,-30,-210],
+// 	size : [24,24,24],
+// 	collision_mask : 1,		// defines which group of objects the object interracts with (binary)
+// 	color : [.5,.5,.5],
+
+// 	colision_detected : false,
+// 	collided : function()
+// 	{
+// 		console.log("Cube got colided");
+// 		this.colision_detected = true;
+// 		return;
+// 	},
+// 	draw : function(context)
+// 	{
+// 		let transform = mat4Transform(this.position, [1,1,1]);
+// 		drawCube(context, transform, this.size, this.color);
+// 		return;
+// 	},
+// 	process : function(delta)
+// 	{
+// 		return;
+// 	},
+// }
+// let spin_object = {
+// 	position : [-30,-30,-210],
+// 	ang : 0.0,
+// 	draw : function(context)
+// 	{
+// 		// find the rotated 'Z' axis of this model
+// 		let z = [sin(this.ang), 0, cos(this.ang)];
+// 		// and the transform matrix is constructed around this vector
+// 		drawCube(context, mat4Transform(this.position, [1,1,1], z), [32,32,32], [.8,.5,.5]);
+// 		return;
+// 	},
+// 	process : function(delta)
+// 	{
+// 		// increment the angle of rotation a bit every frame
+// 		this.ang += delta/500;
+// 		return;
+// 	},
+// }
