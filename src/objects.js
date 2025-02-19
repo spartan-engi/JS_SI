@@ -93,17 +93,11 @@ class Enemy {
 	};
 
 	collided(object) {
-		if (!object) {
-			return false;
-		}
-
 		// Handle player projectile collision
 		if (object.isPlayerProjectile) {
 			this.remove();
 			// add score to the player
 			player.enemyKilled();
-			
-			object.remove();		// remove projectile
 
 			if(enemy_group.removeEnemyInGroup(this))
 				console.log("Removed enemy in enemy_group with sucess");
@@ -218,6 +212,14 @@ let player = {
 		
 		let matRot = mat4Rotation(this.ang[0],this.ang[1]);
 		this.z = vec4MultplyMat4([0,0,-1,1],matRot);
+
+		if(click)
+		{
+			click = 0;
+			let b = new Projectile("p", this.z, this.position);
+			objects.push(b);
+			print("bang!");
+		}
 		
 		return;
 	},
@@ -227,35 +229,56 @@ let player = {
 	}
 }
 
-let projectile = {
-	isEnemyProjectile : null,
-	isPlayerProjectile : null,
-	shouldRemove : false,
-
-	projectile: function(isFrom){
+class Projectile {
+	constructor(isFrom, direction, position){
+		this.position = [position[0], position[1], position[2]];
+		this.size     = [4,4,20];
+		this.dir      = [direction[0], direction[1], direction[2]];
+		this.lifetime = 500.0;
+		this.speed    = 1.0;
 		// Possible atributes
-		//this.color = color;
 		//this.model = model;
 
 		if(isFrom == "e"){		// projectile shooted by enemy
 			this.isEnemyProjectile = true;
 			this.isPlayerProjectile = false;
+			this.color = [1.0,0.2,0.1];
+			this.collision_mask = 1;
 		}
 		else if(isFrom == "p"){		// projectile shooted by player
 			this.isEnemyProjectile = false;
 			this.isPlayerProjectile = true;
+			this.color = [0.0,0.2,1.0];
+			this.collision_mask = 2;
 		}
-	},
-	collided : function(object) {
+	}
+	collided(object) {
 		if(this.isPlayerProjectile && object.isEnemy  ||
 			this.isEnemyProjectile && object.isPlayer || object.isWall){
 			this.remove();
 		}
-	},
-
+	}
 	remove(){
 		this.shouldRemove = true;
-	},
+	}
+	process(delta){
+		
+		// bullet fizzle out, outta range too.
+		this.lifetime -= delta;
+		if(this.lifetime < 0){
+			this.remove();
+			print("fizzle!");
+			return;
+		}
+		
+		// move with speed
+		this.position[0] += this.dir[0]*this.speed*delta;
+		this.position[1] += this.dir[1]*this.speed*delta;
+		this.position[2] += this.dir[2]*this.speed*delta;
+	}
+	draw(context){
+		drawCube(context, mat4Transform(this.position, [1,1,1], this.dir), this.size, this.color);
+	}
 }
 
 let wall_group = {
@@ -286,7 +309,7 @@ let wall_group = {
 }
 
 class Wall {
-		constructor(position = [0, 0, 0], model) {
+	constructor(position = [0, 0, 0], model) {
 		this.isWall = true;
 		this.position = position;
 		this.model = model;
