@@ -72,6 +72,7 @@ function main(){
 	canvas.addEventListener("click", onMouseClick, false);	//only the frame that the mouse is pressed
 	// add mouse motion callback
 	document.addEventListener("mousemove", onMouseMove, false);
+	document.addEventListener("pointerlockchange", onPointerLockToogle, false);
 
 
 
