@@ -106,7 +106,7 @@ function main(){
 		for(let i = 0; i < objects.length; i++)
 		{
 			if(objects[i].shouldRemove){
-				objects.slice(i, 1);
+				objects.splice(i, 1);
 			}
 		}
 		
