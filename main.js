@@ -137,7 +137,6 @@ function main(){
 		}
 		// drawCube(WebGL, mat4Transform(cube_pos), [32,32,32], [.8,.5,.5]);
 
-		console.log(objects);
 		// makes so this function loops
 		requestAnimationFrame(process);
 	}

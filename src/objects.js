@@ -31,7 +31,7 @@ let camera = {
 			// basically only a inverse of the camera transform
 			let camera_position = mat4Transform(this.pos, [1,1,1], this.z, this.up);
 			// 'glues' camera to spaceship motion and rotation
-			let view = mat4OrthInverse(mat4Multiply(camera_position, spaceShip_object.tranform));
+			let view = mat4OrthInverse(mat4Multiply(camera_position, player.model.transform));
 
 			// projection matrix
 			// why the hell does this work again?
@@ -348,8 +348,8 @@ class spaceShip_model {
         }
     }
 	draw(context) {
-		this.tranform = mat4Transform(this.position, [1,1,1], this.z);
-		drawModel(context, this.vPos, this.vCol, this.vQnt, this.tranform);
+		this.transform = mat4Transform(this.position, [1,1,1], this.z);
+		drawModel(context, this.vPos, this.vCol, this.vQnt, this.transform);
 		return;
 	}
 	process(delta){
