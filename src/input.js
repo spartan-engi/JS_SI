@@ -42,6 +42,17 @@ function onKeyRelease(event)
 
 // click callback
 let pointerLock = 0;
+function onPointerLockToogle()
+{
+    pointerLock = Boolean(document.pointerLockElement);
+
+    if(pointerLock) print("lock!");
+    else            print("unlock");
+
+    return;
+}
+
+let click = 0;
 async function onMouseClick(event)
 {
     // x = event.offsetX;
@@ -52,15 +63,18 @@ async function onMouseClick(event)
     // pos[2] = initial_pos[2];
     if(pointerLock)
     {
-        document.exitPointerLock();
-        print("unlock");
-        pointerLock = 0;
+        click = 1;
     }
     else
     {
-        await canvas.requestPointerLock();
-        print("lock!");
-        pointerLock = 1;
+        try
+        {
+            await canvas.requestPointerLock();
+        }
+        catch(e)
+        {
+            print(e);
+        }
     }
 }
 
