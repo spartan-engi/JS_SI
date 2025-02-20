@@ -113,8 +113,7 @@ function main(){
 							(-150 + (d * 30))    // Fixed Z with depth spacing
 						];
 						
-						const model = new enemy_model(position);
-						const enemy = new Enemy(position, model);
+						const enemy = new Enemy(position, THE_enemy_model);
 						
 						if(enemy_group.addEnemyInGroup(enemy)) {
 							objects.push(enemy);
@@ -205,7 +204,7 @@ function physics_process(physics_objects)
 	return
 }
 
-// Initializate enemys in group enemys and return all enemys created
+// Create and place player
 function initializePlayer() {
 	// const position = [-20, -20, -20];
 	const position = [-70, -30, 70];
@@ -214,6 +213,7 @@ function initializePlayer() {
 	player.init(3, position, model);
 }
 
+// Create enemys in group enemys
 function initializeEnemys() {
 	enemy_group.enemy_group(0, 48, 6, 4, 2, []);
 
@@ -247,6 +247,7 @@ function initializeEnemys() {
     }
 }
 
+// Create walls
 function inicializeWalls() {
 	// set the position on the walls 
 	wall_group.wall_group(0, 5, []);
@@ -266,7 +267,7 @@ function inicializeWalls() {
 	}
 }
 
-// Initialize objects before of the game, if are not converted, it will convert to bin
+// Initialize objects before of the game, if some model is not converted, it will convert to bin
 function initializeObjects() {
     objects.push(player);
 	

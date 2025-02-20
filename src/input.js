@@ -9,7 +9,14 @@ let key_states = {
 	's' : 0,
 }
 
+// Global Input Variables
+//movment of mouse pointer since last frame
 let movMouse = [0,0];
+// mouse pointer captured
+let pointerLock = 0;
+// buffered mouse click
+let click = 0;
+
 // key callback
 function onKeyPress(event)
 {
@@ -24,7 +31,6 @@ function onKeyPress(event)
     }
     // print(key_states);
 }
-
 function onKeyRelease(event)
 {
     switch(event.key)
@@ -39,9 +45,7 @@ function onKeyRelease(event)
     // print(key_states);
 }
 
-
-// click callback
-let pointerLock = 0;
+// pointer being captured or released callback
 function onPointerLockToogle()
 {
     pointerLock = Boolean(document.pointerLockElement);
@@ -52,7 +56,7 @@ function onPointerLockToogle()
     return;
 }
 
-let click = 0;
+// click callback
 async function onMouseClick(event)
 {
     // x = event.offsetX;
