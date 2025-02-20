@@ -97,19 +97,35 @@ function main(){
 		//clean screen
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-		const highestY = checkSpawnEnemy();
-		if(highestY){
-			// Spawn new line
-			for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
-				// Create new line in the position top.
-				const position = [(-200 + (j*40)), highestY + 20, -70];	
-				const model = new enemy_model(position);
-				const enemy = new Enemy(position, model);
-				
-				enemy_group.addEnemyInGroup(enemy);
-				objects.push(enemy);
+		const needSpawn = checkSpawnEnemy();
+
+		const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
+		const depthSlots = Math.floor(enemysToSpawn / (enemy_group.maxQtdPerLine * enemy_group.maxQtdPerColumn));
+
+		if(needSpawn) {
+			// Spawn new depth layer
+			for(let d = 0; d < depthSlots; d++) {
+				for(let i = 0; i < enemy_group.maxQtdPerColumn; i++) {
+					for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
+						const position = [
+							(-200 + (j * 40)),  // X spacing
+							(-30 + (i * 20)),   // Y spacing
+							(-150 + (d * 30))    // Fixed Z with depth spacing
+						];
+						
+						const model = new enemy_model(position);
+						const enemy = new Enemy(position, model);
+						
+						if(enemy_group.addEnemyInGroup(enemy)) {
+							objects.push(enemy);
+							enemy.ready();
+						}
+					}
+				}
 			}
 		}
+
+		console.log(objects.length);
 
 		// WebGL.gl.viewport(0,0, canvas.width/2, canvas.height/2);
 		// console.log(obj);
@@ -199,30 +215,36 @@ function initializePlayer() {
 }
 
 function initializeEnemys() {
-	enemy_group.enemy_group(0, 20, 5, []);
+	enemy_group.enemy_group(0, 48, 6, 4, 2, []);
+
+	// Calculate spacing
+    const SPACING_X = 40;
+    const SPACING_Y = 20;
+    const SPACING_Z = 50;
+
+	// Base position
+    const START_X = -190;
+    const START_Y = -40;
+    const START_Z = -150;
 
 	//shared model
 	THE_enemy_model =  new enemy_model();
+	
+	// Create 3D grid of enemies
+    for(let z = 0; z < enemy_group.maxQtdPerDepth; z++) {
+        for(let y = 0; y < enemy_group.maxQtdPerColumn; y++) {
+            for(let x = 0; x < enemy_group.maxQtdPerLine; x++) {
+                const position = [
+                    START_X + (x * SPACING_X),
+                    START_Y + (y * SPACING_Y),
+                    START_Z + (z * SPACING_Z)
+                ];
 
-	const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
-
-	let j = 0;
-	
-	for(let i = 0; i < (enemysToSpawn / enemy_group.maxQtdPerLine); i++){
-		for(let j = 0; j < enemy_group.maxQtdPerLine; j++){
-			// assuming that have 5 enemys in each line
-			// with max 20 enemys in group, so -> 4 lines
-			
-			//const position = [i * 20, 0, 0];
-			const position = [(-200 + (j*40)), -30 + (i * 20), -70];	// change the position in the final project
-	
-			// Create enemy object
-			const enemy = new Enemy(position, THE_enemy_model);
-	
-			// Insert enemy object in group_enemy
-			enemy_group.addEnemyInGroup(enemy);
-		}
-	}
+                const enemy = new Enemy(position, THE_enemy_model);
+                enemy_group.addEnemyInGroup(enemy);
+            }
+        }
+    }
 }
 
 function inicializeWalls() {

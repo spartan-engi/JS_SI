@@ -56,11 +56,13 @@ let camera = {
 
 /* Variables and objects in game */
 let enemy_group = {
-	enemy_group : function(quantity, maxQtd = 20, maxQtdPerLine = 5, enemys = []){
+	enemy_group : function(quantity, maxQtd = 60, maxQtdPerLine = 5, maxQtdPerColumn = 4, maxQtdPerDepth = 3, enemys = []){
 		//this.centerPos = centerPosition;
 		this.qtd = quantity;
 		this.maxQtd = maxQtd;
 		this.maxQtdPerLine = maxQtdPerLine;
+		this.maxQtdPerColumn = maxQtdPerColumn;
+		this.maxQtdPerDepth = maxQtdPerDepth;
 		this.enemys = enemys;	// List of enemys{}
 	},
 	removeEnemyInGroup :  function(enemy) {
@@ -127,7 +129,7 @@ class Enemy {
 	};
 
 	draw(context){
-		let transform = mat4Transform(this.position)
+		let transform = mat4Transform(this.position);
 		// mild adjustment, so hitbox doesn't feel too bad
 		let model_transform = mat4Multiply(transform, mat4Transform([-23,-15,3]));
 		this.model.draw(context, model_transform);
@@ -181,6 +183,7 @@ let player = {
 	},
 	updateHealth(health) {
 		this.health += health
+		document.getElementById('lives-display').textContent = this.health;
 		if (this.health <= 0) {
 			died();
 		}
@@ -193,6 +196,7 @@ let player = {
 	},
 	addScore(value) {
 		this.score += value;
+		document.getElementById('score-display').textContent = this.score;
 	},
 	died(){
 		alert("You lose :( \
