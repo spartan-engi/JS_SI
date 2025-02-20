@@ -219,6 +219,7 @@ function initializePlayer() {
 	player.init(5, position, model);
 }
 
+// Create enemys in group enemys
 function initializeEnemys() {
 	enemy_group.enemy_group(0, 48, 6, 4, 2, []);
 
@@ -262,6 +263,7 @@ function initializeEnemys() {
     }
 }
 
+// Create walls
 function inicializeWalls() {
 	// set the position on the walls 
 	wall_group.wall_group(0, 13, []);
@@ -300,7 +302,7 @@ function inicializeWalls() {
     });
 }
 
-// Initialize objects before of the game, if are not converted, it will convert to bin
+// Initialize objects before of the game, if some model is not converted, it will convert to bin
 function initializeObjects() {
     objects.push(player);
 	
