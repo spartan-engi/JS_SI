@@ -29,18 +29,20 @@ function main(){
 
 	//finding uniform placement inside the shader
 	const MVPUniformLoc       = gl.getUniformLocation(program, `MVP`);
-	const pointSizeUniformLoc = gl.getUniformLocation(program, `pointSize`);
-
-	//defining uniform
-	let line_width = 5;
-	// pushing uniform into shaders
-	gl.uniform1f(pointSizeUniformLoc, line_width);
+	const ColorUniformLoc     = gl.getUniformLocation(program,  `color`);
+	const NormalMatUniformLoc = gl.getUniformLocation(program,  `NormalMat`);
+	
+	// const pointSizeUniformLoc = gl.getUniformLocation(program, `pointSize`);
+	// //defining uniform
+	// let line_width = 5;
+	// // pushing uniform into shaders
+	// gl.uniform1f(pointSizeUniformLoc, line_width);
 
 
 
 	// creating buffers
 	const positionBuffer = gl.createBuffer();
-	const colorBuffer    = gl.createBuffer();
+	const normalBuffer    = gl.createBuffer();
 
 	// tying buffer to shader
 	const positionLocation = gl.getAttribLocation(program, `position`);
@@ -49,10 +51,10 @@ function main(){
 	gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
 
 	// tying buffer to shader
-	const colorLocation = gl.getAttribLocation(program, `color`);
-	gl.enableVertexAttribArray(colorLocation);
-	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 0, 0);
+	const normalLocation = gl.getAttribLocation(program, `normal`);
+	gl.enableVertexAttribArray(normalLocation);
+	gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+	gl.vertexAttribPointer(normalLocation, 3, gl.FLOAT, false, 0, 0);
 
 	// setup camera object
 	// camera creates the projected_view matrix
@@ -61,7 +63,7 @@ function main(){
 	
 	// initialization ready, tie everything up into one context structure
 	// this context around instead of making functions with a thousand parameters
-	const WebGL = new context.context(gl, positionBuffer, colorBuffer, main_cam, MVPUniformLoc);
+	const WebGL = new context.context(gl, positionBuffer, normalBuffer, main_cam, MVPUniformLoc, NormalMatUniformLoc, ColorUniformLoc);
 
 
 	// callbacks... not driving anything for now

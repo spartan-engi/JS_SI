@@ -1,18 +1,23 @@
 /* 3d drawing functions */
 
 
-function drawModel(context, vertices, colorData, vertexCount, transform)
+function drawModel(context, vertices, normalData, vertexCount, transform, color)
 {
 	// send position data
 	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.positionBuffer);
 	context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(vertices), context.gl.STATIC_DRAW);
-	// send color data
-	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.colorBuffer);
-	context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(colorData), context.gl.STATIC_DRAW);
+	// send normal data
+	context.gl.bindBuffer(context.gl.ARRAY_BUFFER, context.normalBuffer);
+	context.gl.bufferData(context.gl.ARRAY_BUFFER, new Float32Array(normalData), context.gl.STATIC_DRAW);
 	
 	// set transform
-	let MVP = mat4Multiply(transform, context.camera.getMat());
-	context.gl.uniformMatrix4fv(context.MVPloc, false, MVP)
+	let MVP = mat4Multiply(transform, mat4Multiply(context.camera.getView(), context.camera.getProj()));
+	context.gl.uniformMatrix4fv(context.MVPloc, false, MVP);
+	// set object color
+	context.gl.uniform3fv(context.colorLoc, new Float32Array(color));
+	// set normal transform
+	let NormalMatix = mat4Multiply(transform, context.camera.getView());
+	context.gl.uniformMatrix4fv(context.NMATloc, false, NormalMatix);
 
 	context.gl.drawArrays(context.gl.TRIANGLES, 0, vertexCount);
 }
@@ -71,22 +76,22 @@ function drawCube(context, transform, size = [0,0,0], color = [0,0,0,0])
 		-.5, -.5, -.5,
 	  ];
 	
-	let faceColor = [
-		[0.0,0.0,0.1], [0.0,0.0,-.1],
-		[0.1,0.0,0.0], [-.1,0.0,0.0],
-		[0.0,0.1,0.0], [0.0,-.1,0.0],
+	let faceNormal = [
+		[ 0, 0, 1], [ 0, 0,-1],
+		[ 1, 0, 0], [-1, 0, 0],
+		[ 0, 1, 0], [ 0,-1, 0],
 	]
 	
 	// pre-buffer
 	let vertices = []
-	let colorData = [];
+	let normalData = [];
 	for(let faces=0; faces<6; faces++)
 	{
-		// fudge color based on face
-		let c = [
-			color[0]+faceColor[faces][0],
-			color[1]+faceColor[faces][1],
-			color[2]+faceColor[faces][2]
+		// set normal based on face
+		let n = [
+			faceNormal[faces][0],
+			faceNormal[faces][1],
+			faceNormal[faces][2]
 		];
 		for(let triangle=0; triangle<2; triangle++)
 		{
@@ -96,11 +101,11 @@ function drawCube(context, transform, size = [0,0,0], color = [0,0,0,0])
 				let i = vertex + triangle*3 + faces*6;
 				vertices.push(...[vertexData[i*3]*size[0],vertexData[i*3+1]*size[1],vertexData[i*3+2]*size[2]]);
 				// color
-				colorData.push(...c);
+				normalData.push(...n);
 			}
 		}
 	}
 	
 
-	drawModel(context, vertices, colorData, 36, transform);
+	drawModel(context, vertices, normalData, 36, transform, color);
 }

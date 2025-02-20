@@ -2,12 +2,14 @@
 
 // openGL context and things
 let context = {
-	context : function(gl, positionBuffer, colorBuffer, camera, MVPloc){
+	context : function(gl, positionBuffer, normalBuffer, camera, MVPloc, NMATloc, colorLoc){
 		this.gl = gl;
 		this.positionBuffer = positionBuffer;
-		this.colorBuffer = colorBuffer;
+		this.normalBuffer = normalBuffer;
 		this.camera = camera;
 		this.MVPloc = MVPloc;
+		this.NMATloc = NMATloc;
+		this.colorLoc = colorLoc;
 	}
 };
 
@@ -22,8 +24,8 @@ let camera = {
 		this.near   =  near_plane;
 		this.far    =  far_plane;
 		
-		// function called to get the camera's VP matrix
-		this.getMat =  function()
+		// function called to get the camera's View matrix
+		this.getView =  function()
 		{
 			// model... is applied by the model itself
 
@@ -33,22 +35,20 @@ let camera = {
 			// 'glues' camera to spaceship motion and rotation
 			let view = mat4OrthInverse(mat4Multiply(camera_position, player.transform));
 
+			return view;
+		}
+		// function called to get the camera's Projection matrix
+		this.getProj =  function()
+		{
 			// projection matrix
 			// why the hell does this work again?
 			let proj = mat4projection(this.near, this.far);
-			
-			//these two matricies make the whole camera projection
-			return mat4Multiply(view, proj);
+			return proj;
 
 			// only needed for orthogonal projection
 			// // clip matrix - from camera coordinates to normalized screen coordinates
 			// // camera will render things from (-250 < x < 250), (250 > y > -250), (-250 < z < 250)
 			// let clip = mat4Transform([0,0,0], [2/canvas.width, 2/canvas.height, 2/500]);
-		}
-		this.mov = function()
-		{
-			//this.pos = [obj.position[0]+60,obj.position[1]+150,obj.position[2]+60];	
-			//this.z = [-100,-40,-100];
 		}
 	}
 };
@@ -99,6 +99,11 @@ class Enemy {
 		this.model = model;
 		this.isEnemy = true;
 		this.shouldRemove = false;
+		this.color = [
+			Math.random()*.1 + .7,
+			Math.random()*.3 + .3,
+			Math.random()*.1 + .1,
+		]
 	};
 
 	collided(object) {
@@ -175,7 +180,7 @@ class Enemy {
 		let transform = mat4Transform(this.position);
 		// mild adjustment, so hitbox doesn't feel too bad
 		let model_transform = mat4Multiply(transform, mat4Transform([-23,-15,3]));
-		this.model.draw(context, model_transform);
+		this.model.draw(context, model_transform, this.color);
 		// // show collision shape
 		// drawCube(context, transform, this.size, [.4,.7,.2]);
 	}
@@ -193,6 +198,7 @@ let player = {
 	z              : [0,0,1],
 	transform      : 0,
 	speed          : 0.08,
+	color          : [.3,.9,.9],
 	killCounter	   : 0,
 
 	init : function(health = 5, position = [0,0,0], model){
@@ -203,6 +209,7 @@ let player = {
 		this.transform = mat4identity();
 		this.model = model;
 		this.speed = 0.08;
+		this.color = [.3,.9,.9];
 	},
 	collided : function(object) {
 		if (!object) {
@@ -312,7 +319,7 @@ let player = {
 		this.transform = mat4Transform(this.position, [1,1,1], this.z);
 		// mild adjustment, so hitbox doesn't feel too bad
 		let model_transform = mat4Multiply(this.transform, mat4Transform([0,-4,-4]));
-		this.model.draw(context, model_transform);
+		this.model.draw(context, model_transform, this.color);
 		// // show collision shape
 		// drawCube(context, this.transform, this.size, [.4,.7,.2]);
 	}
@@ -409,6 +416,11 @@ class Wall {
 		this.model = model;
 		this.size = [10,6,3];
 		this.collision_mask = 3;
+		this.color = [
+			Math.random()*.2 + .2,
+			Math.random()*.4 + .8,
+			Math.random()*.2 + .2,
+		]
 	}
 	collided(object){
 		// Nothing should happen to the wall
@@ -429,7 +441,7 @@ class Wall {
 		let transform  = mat4Transform(this.position);	// actual barrier position
 		let model_transform = mat4Multiply(mat4Multiply(mat4Multiply(
 			rot_adjust, rotation), trl_adjust), transform);
-		this.model.draw(context, model_transform);
+		this.model.draw(context, model_transform, this.color);
 		// // show collision shape
 		// drawCube(context, transform, this.size, [.4,.7,.2]);
 	}
@@ -473,8 +485,8 @@ class spaceShip_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context, transform) {
-		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
+	draw(context, transform, color) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform, color);
 		return;
 	}
 }
@@ -521,8 +533,8 @@ class enemy_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context, transform) {
-		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
+	draw(context, transform, color) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform, color);
 		return;
 	}
 }
@@ -561,8 +573,8 @@ class wall_model {
             this.vCol[basePos + 2] = modelData[baseData + 5];
         }
     }
-	draw(context, transform) {
-		drawModel(context, this.vPos, this.vCol, this.vQnt, transform);
+	draw(context, transform, color) {
+		drawModel(context, this.vPos, this.vCol, this.vQnt, transform, color);
 		return;
 	}
 }
