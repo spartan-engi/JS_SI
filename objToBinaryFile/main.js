@@ -13,36 +13,65 @@ const stringsToNumbers = (strings) => {
 }
 
 const parseFile = (fileContents) => {
-	const position = [];
-	const textCoords = [];
-	const vecNormals = [];
+	const positions = [];
+    const normals = [];
+    const texCoords = [];
+    const vertices = [];
 
-	const arrayBufferSource = [];
-	
-	const lines = fileContents.split("\n");
-	for (const line of lines) { 
-		const [command, ...values] = line.split(' ', 4);
-		
-		if(command == 'v'){
-			position.push(stringsToNumbers(values));
-		}
-		else if(command == 'vt'){
-			textCoords.push(stringsToNumbers(values));
-		}
-		else if(command == 'vn'){
-			vecNormals.push(stringsToNumbers(values));
-		}
-		else if(command == 'f'){
-			for (const group of values) {
-				const [positionIndex, textCoordIndex, vecNormalIndex] = stringsToNumbers(group.split('/'));
-				
-				arrayBufferSource.push(...position[positionIndex - 1]);
-				arrayBufferSource.push(...vecNormals[vecNormalIndex - 1]);
-				arrayBufferSource.push(...textCoords[textCoordIndex - 1]);
-			}
-		}
-	}
-	return new Float32Array(arrayBufferSource).buffer;
+	console.log(fileContents);
+
+    const lines = fileContents.split('\n');
+    for (const line of lines) {
+        const tokens = line.trim().split(/\s+/);
+        if (!tokens || tokens.length === 0 || tokens[0].startsWith('#')) continue;
+
+        switch(tokens[0]) {
+            case 'v':  // Vertex positions
+                positions.push([
+                    parseFloat(tokens[1]),
+                    parseFloat(tokens[2]),
+                    parseFloat(tokens[3])
+                ]);
+                break;
+            case 'vn': // Vertex normals
+                normals.push([
+                    parseFloat(tokens[1]),
+                    parseFloat(tokens[2]),
+                    parseFloat(tokens[3])
+                ]);
+                break;
+            case 'vt': // Texture coordinates
+                texCoords.push([
+                    parseFloat(tokens[1]),
+                    parseFloat(tokens[2])
+                ]);
+                break;
+            case 'f':  // Faces
+                // Parse face indices (vertex/texture/normal)
+                const indices = tokens.slice(1).map(v => 
+                    v.split('/').map(x => parseInt(x) - 1)
+                );
+                
+                // Add first triangle
+                for(let i = 0; i < 3; i++) {
+                    const [vIdx, tIdx, nIdx] = indices[i];
+                    vertices.push(
+                        ...positions[vIdx],    // XYZ
+                        ...normals[nIdx],      // Normal
+                        ...texCoords[tIdx]     // UV
+                    );
+                }
+                break;
+        }
+    }
+
+    // Debug info
+    console.log(`Vertices: ${positions.length}`);
+    console.log(`Normals: ${normals.length}`);
+    console.log(`TexCoords: ${texCoords.length}`);
+    console.log(`Output vertices: ${vertices.length / 8}`);
+
+    return new Float32Array(vertices).buffer;
 };
 
 const saveBinaryFile = (fileName, arrayBuffer) => {
@@ -60,10 +89,10 @@ const saveBinaryFile = (fileName, arrayBuffer) => {
 }
 
 const main = async () => {
-    const fileContents = await getFileContents('cat.obj');
+    const fileContents = await getFileContents('../models/obj/enemy.obj');
     const arrayBuffer = parseFile(fileContents);
 	console.log(arrayBuffer);
-	saveBinaryFile('cat.bin', arrayBuffer);		// Create a object of the same name .bin
+	saveBinaryFile('enemy.bin', arrayBuffer);		// Create a object of the same name .bin
 };
 
 main();
