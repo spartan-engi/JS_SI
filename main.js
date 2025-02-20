@@ -182,8 +182,8 @@ function physics_process(physics_objects)
 			if(!collision) continue;
 			
 			//collision!
-			a.collided();
-			b.collided();
+			a.collided(b);
+			b.collided(a);
 		}
 	}
 	return

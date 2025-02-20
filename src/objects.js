@@ -87,6 +87,8 @@ let enemy_group = {
 class Enemy {
 	constructor(position = [0,0,0], model){
 		this.position = position;
+		this.size = [30,14,10];
+		this.collision_mask = 2;
 		this.model = model;
 		this.isEnemy = true;
 		this.shouldRemove = false;
@@ -125,24 +127,33 @@ class Enemy {
 	};
 
 	draw(context){
-		this.model.draw(context, mat4Transform(this.position));
+		let transform = mat4Transform(this.position)
+		// mild adjustment, so hitbox doesn't feel too bad
+		let model_transform = mat4Multiply(transform, mat4Transform([-23,-15,3]));
+		this.model.draw(context, model_transform);
+		// // show collision shape
+		// drawCube(context, transform, this.size, [.4,.7,.2]);
 	}
 };
 
 let player = {
-	isPlayer     : true,
-	shouldRemove : false,
-	score        : 0,
-	health       : 3,
-	position     : [0,0,0],
-	ang          : [0,0],
-	z            : [0,0,1],
-	transform    : 0,
-	speed        : 0.08,
+	isPlayer       : true,
+	shouldRemove   : false,
+	score          : 0,
+	health         : 3,
+	position       : [0,0,0],
+	size           : [26,14,26],
+	collision_mask : 2,
+	ang            : [0,0],
+	z              : [0,0,1],
+	transform      : 0,
+	speed          : 0.08,
 
 	init : function(health = 3, position = [0,0,0], model){
 		this.health = health;
 		this.position = position;
+		this.size = [26,14,26];
+		this.collision_mask = 2;
 		this.transform = mat4identity();
 		this.model = model;
 		this.speed = 0.08;
@@ -225,7 +236,11 @@ let player = {
 	},
 	draw(context){
 		this.transform = mat4Transform(this.position, [1,1,1], this.z);
-		this.model.draw(context, this.transform);
+		// mild adjustment, so hitbox doesn't feel too bad
+		let model_transform = mat4Multiply(this.transform, mat4Transform([0,-4,-4]));
+		this.model.draw(context, model_transform);
+		// // show collision shape
+		// drawCube(context, this.transform, this.size, [.4,.7,.2]);
 	}
 }
 
@@ -260,6 +275,8 @@ class Projectile {
 	}
 	remove(){
 		this.shouldRemove = true;
+		// disable collision, so this doesn't collide with anything else
+		this.collision_mask = 0;
 	}
 	process(delta){
 		
@@ -277,6 +294,7 @@ class Projectile {
 		this.position[2] += this.dir[2]*this.speed*delta;
 	}
 	draw(context){
+		if(this.shouldRemove) return;
 		drawCube(context, mat4Transform(this.position, [1,1,1], this.dir), this.size, this.color);
 	}
 }
