@@ -192,7 +192,7 @@ function physics_process(physics_objects)
 // Initializate enemys in group enemys and return all enemys created
 function initializePlayer() {
 	// const position = [-20, -20, -20];
-	const position = [-70, -70, -70];
+	const position = [-70, -30, 70];
 	const model = new spaceShip_model(position);
 
 	player.init(3, position, model);
@@ -233,7 +233,7 @@ function inicializeWalls() {
 
 	for(let i = 0; i < wallsToAdd; i++){
 		//const position = [i * 20, 0, 0];
-		const position = [(-250 + (i*80)), -30, 70];	// this could change in the final project
+		const position = [(-250 + (i*80)), -30, 0];	// this could change in the final project
 		const model =  new wall_model(position);
 
 		// Create wall object

@@ -331,6 +331,8 @@ class Wall {
 		this.isWall = true;
 		this.position = position;
 		this.model = model;
+		this.size = [10,6,3];
+		this.collision_mask = 3;
 	}
 	collided(object){
 		// Nothing should happen to the wall
@@ -344,7 +346,16 @@ class Wall {
 		return;
 	}
 	draw(context){
-		this.model.draw(context, mat4Transform(this.position));
+		// heavy adjustment, so hitbox doesn't feel quite as horrendously bad
+		let rot_adjust = mat4Transform([-60,0,90]);     // move center to origin-ish
+		let rotation   = mat4Rotation(0,-43*PI2/64);    // rotate
+		let trl_adjust = mat4Transform([-2,0,0]);       // center collision shape
+		let transform  = mat4Transform(this.position);	// actual barrier position
+		let model_transform = mat4Multiply(mat4Multiply(mat4Multiply(
+			rot_adjust, rotation), trl_adjust), transform);
+		this.model.draw(context, model_transform);
+		// // show collision shape
+		// drawCube(context, transform, this.size, [.4,.7,.2]);
 	}
 }
 
