@@ -1,5 +1,6 @@
 const pathModelsBin = './models/bin/';
 const objects = [];
+window.gameObjects = objects;
 // todo: figure out how to clear the trash
 
 // required for input
@@ -99,33 +100,11 @@ function main(){
 
 		const needSpawn = checkSpawnEnemy();
 
-		const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
-		const depthSlots = Math.floor(enemysToSpawn / (enemy_group.maxQtdPerLine * enemy_group.maxQtdPerColumn));
-
 		if(needSpawn) {
-			// Spawn new depth layer
-			for(let d = 0; d < depthSlots; d++) {
-				for(let i = 0; i < enemy_group.maxQtdPerColumn; i++) {
-					for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
-						const position = [
-							(-200 + (j * 40)),  // X spacing
-							(-30 + (i * 20)),   // Y spacing
-							(-150 + (d * 30))    // Fixed Z with depth spacing
-						];
-						
-						const model = new enemy_model(position);
-						const enemy = new Enemy(position, model);
-						
-						if(enemy_group.addEnemyInGroup(enemy)) {
-							objects.push(enemy);
-							enemy.ready();
-						}
-					}
-				}
-			}
+			spawnEnemyLayer();
 		}
 
-		console.log(objects.length);
+		// console.log(objects.length);
 
 		// WebGL.gl.viewport(0,0, canvas.width/2, canvas.height/2);
 		// console.log(obj);
@@ -205,13 +184,39 @@ function physics_process(physics_objects)
 	return
 }
 
+function spawnEnemyLayer() {
+    const enemysToSpawn = enemy_group.maxQtd - enemy_group.qtd;
+    const depthSlots = Math.floor(enemysToSpawn / (enemy_group.maxQtdPerLine * enemy_group.maxQtdPerColumn));
+
+    for(let d = 0; d < depthSlots; d++) {
+        for(let i = 0; i < enemy_group.maxQtdPerColumn; i++) {
+            for(let j = 0; j < enemy_group.maxQtdPerLine; j++) {
+                const position = [
+                    (-200 + (j * 40)),
+                    (-30 + (i * 20)),
+                    (-300 + (d * 30))
+                ];
+                
+                const willShoot = Math.random() < 0.4;
+                const model = new enemy_model(position);
+                const enemy = new Enemy(position, willShoot, model);
+                
+                if(enemy_group.addEnemyInGroup(enemy)) {
+                    objects.push(enemy);
+                    enemy.ready();
+                }
+            }
+        }
+    }
+}
+
 // Initializate enemys in group enemys and return all enemys created
 function initializePlayer() {
 	// const position = [-20, -20, -20];
 	const position = [-70, -30, 70];
 	const model = new spaceShip_model(position);
 
-	player.init(3, position, model);
+	player.init(5, position, model);
 }
 
 function initializeEnemys() {
@@ -225,7 +230,7 @@ function initializeEnemys() {
 	// Base position
     const START_X = -190;
     const START_Y = -40;
-    const START_Z = -150;
+    const START_Z = -300;
 
 	//shared model
 	THE_enemy_model =  new enemy_model();
@@ -240,7 +245,17 @@ function initializeEnemys() {
                     START_Z + (z * SPACING_Z)
                 ];
 
-                const enemy = new Enemy(position, THE_enemy_model);
+				let willShoot;
+				// Choose randomly if the enemy will be able to shoot or not
+				if (Math.random() < 0.4) {
+					willShoot = true;
+				}
+				else{
+					willShoot = false;
+				}
+
+				const enemy = new Enemy(position, willShoot, THE_enemy_model);
+
                 enemy_group.addEnemyInGroup(enemy);
             }
         }
@@ -249,21 +264,40 @@ function initializeEnemys() {
 
 function inicializeWalls() {
 	// set the position on the walls 
-	wall_group.wall_group(0, 5, []);
+	wall_group.wall_group(0, 13, []);
 
-	const wallsToAdd = wall_group.maxQtd - wall_group.qtd;
+	// Wall positioning parameters
+    const START_X = -250;
+    const SPACING_X = 100;
+    const positions = {
+        bottom: { y: -50, count: 5 },
+        middle: { y: -10, count: 4 },
+        top: { y: 30, count: 5 }
+    };
 
-	for(let i = 0; i < wallsToAdd; i++){
-		//const position = [i * 20, 0, 0];
-		const position = [(-250 + (i*80)), -30, 0];	// this could change in the final project
-		const model =  new wall_model(position);
+	// Create walls for each row
+    Object.entries(positions).forEach(([row, { y, count }]) => {
+        // Calculate row start position once
+        let rowStartX = START_X;
+        
+        // Center middle row
+        if(row === 'middle') {
+            rowStartX += SPACING_X * 0.5; // Offset to center 4 walls
+        }
 
-		// Create wall object
-		const wall = new Wall(position, model);
+        for(let i = 0; i < count; i++) {
+            const position = [
+                rowStartX + (i * SPACING_X),
+                y,
+                0
+            ];
 
-		// Insert wall object in group_enemy
-		wall_group.addWallInGroup(wall);
-	}
+            const model = new wall_model(position);
+            const wall = new Wall(position, model);
+            wall_group.addWallInGroup(wall);
+            objects.push(wall);
+        }
+    });
 }
 
 // Initialize objects before of the game, if are not converted, it will convert to bin
@@ -278,8 +312,6 @@ function initializeObjects() {
 	wall_group.walls.forEach(wall => {
 		objects.push(wall);
 	});
-	
-	console.log(objects);
     
     // Initialize all models that need setup
     objects.forEach(obj => {

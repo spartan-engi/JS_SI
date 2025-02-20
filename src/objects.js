@@ -87,10 +87,15 @@ let enemy_group = {
 };
 
 class Enemy {
-	constructor(position = [0,0,0], model){
+	constructor(position = [0,0,0], shouldShoot = false, model){
 		this.position = position;
+		this.shouldShoot = shouldShoot
+		this.minDelay = 3000;  // 3 seconds minimum
+        this.maxDelay = 4500;  // 4.5 seconds maximum
+        this.shootDelay = Math.random() * (this.maxDelay - this.minDelay) + this.minDelay;
+        this.shootCooldown = Math.random() * this.shootDelay; // Random initial cooldown
 		this.size = [30,14,10];
-		this.collision_mask = 2;
+		this.collision_mask = 1;
 		this.model = model;
 		this.isEnemy = true;
 		this.shouldRemove = false;
@@ -119,14 +124,52 @@ class Enemy {
 		this.model.ready();
 	};
 	process(delta){
-		let mov = [0,0,0];
-		mov[0] = key_states['a'] - key_states['d'];
-		mov[1] = key_states['e'] - key_states['q'];
-		mov[2] = key_states['s'] - key_states['w'];
-		this.position[0] += mov[0];
-		this.position[1] += mov[1];
-		this.position[2] += mov[2];
+		// Base movement params of the zig zag movement enemys
+
+		const baseSpeed = 0.2;  // Side movement speed (X)
+		const yOscillation = 0.3;  // Up/down movement amount (Y)
+		const forwardSpeed = 0.2;  // Forward movement speed (Z)
+		
+		// Get layer of the enemy
+		const layerNumber = Math.floor(this.position[2] / 50);
+
+		//Depending of the layer the type of the movement change
+    
+		// Alternate X direction based on layer
+		if (layerNumber % 2 === 0) {
+			this.position[0] += baseSpeed;
+		} else {
+			this.position[0] -= baseSpeed;
+		}
+		
+		// Y oscillation
+		this.position[1] += Math.sin(Date.now() * 0.002) * yOscillation;
+		
+		// Forward movement
+		this.position[2] += forwardSpeed;
+
+	
+		// Handle shooting
+		if(this.shouldShoot) {
+			this.shootCooldown -= delta;
+			if(this.shootCooldown <= 0) {
+				this.shoot();
+				this.shootCooldown = this.shootDelay;
+			}
+		}
 	};
+
+	shoot() {
+        const spread = 0.1;
+        const direction = [(Math.random() - 0.5) * spread, 
+							(Math.random() - 0.5) * spread, 
+							1];
+
+        const projectile = new Projectile("e", direction, this.position, 0.5);
+        objects.push(projectile);
+        // Set new random delay for next shot
+        this.shootDelay = Math.random() * (this.maxDelay - this.minDelay) + this.minDelay;
+    }
 
 	draw(context){
 		let transform = mat4Transform(this.position);
@@ -142,7 +185,7 @@ let player = {
 	isPlayer       : true,
 	shouldRemove   : false,
 	score          : 0,
-	health         : 3,
+	health         : 5,
 	position       : [0,0,0],
 	size           : [26,14,26],
 	collision_mask : 2,
@@ -150,8 +193,9 @@ let player = {
 	z              : [0,0,1],
 	transform      : 0,
 	speed          : 0.08,
+	killCounter	   : 0,
 
-	init : function(health = 3, position = [0,0,0], model){
+	init : function(health = 5, position = [0,0,0], model){
 		this.health = health;
 		this.position = position;
 		this.size = [26,14,26];
@@ -167,7 +211,7 @@ let player = {
 
 		// Handle enemy projectile collision
 		if(object.isEnemyProjectile){
-			updateHealth(-1);
+			this.updateHealth(-1);
 
 			if(this.health <= 0){
 				this.remove();
@@ -185,7 +229,7 @@ let player = {
 		this.health += health
 		document.getElementById('lives-display').textContent = this.health;
 		if (this.health <= 0) {
-			died();
+			this.died();
 		}
 	},
 	remove(){
@@ -193,14 +237,40 @@ let player = {
 	},
 	enemyKilled(){
 		this.addScore(100);
+		this.killCounter++;
+        
+		document.getElementById('kills-display').textContent = this.killCounter;
+        // Every 30 kills, heal player
+        if (this.killCounter >= 30) {
+            this.updateHealth(1);
+            this.killCounter = 0; // Reset counter
+			document.getElementById('kills-display').textContent = '0'; // Reset display
+        }
 	},
 	addScore(value) {
 		this.score += value;
 		document.getElementById('score-display').textContent = this.score;
+
+		// WIN
+		if(this.score >= 10000) {
+            this.win();
+        }
 	},
+	win() {
+        alert("Congratulations! You won! \nFinal Score: " + this.score);
+        location.reload(); // Restart game
+    },
 	died(){
-		alert("You lose :( \
-			Press 'R' to restart the game!");
+		alert(`Game Over!\n
+			Final Score: ${this.score}\n
+			Press 'R' to restart the game!`);
+				
+		// Add event listener for restart
+		document.addEventListener('keydown', (e) => {
+			if(e.key.toLowerCase() === 'r') {
+				location.reload();
+			}
+		});
 	},
 	ready(){
 		this.model.ready();
@@ -249,12 +319,13 @@ let player = {
 }
 
 class Projectile {
-	constructor(isFrom, direction, position){
-		this.position = [position[0], position[1], position[2]];
-		this.size     = [4,4,20];
-		this.dir      = [direction[0], direction[1], direction[2]];
-		this.lifetime = 500.0;
-		this.speed    = 1.0;
+	constructor(isFrom, direction, position, speed = 1.0){
+		this.position 	  = [position[0], position[1], position[2]];
+		this.size    	  = [4,4,20];
+		this.dir      	  = [direction[0], direction[1], direction[2]];
+		this.lifetime 	  = 1000.0;
+		this.speed   	  = speed;
+		this.shouldRemove = false;
 		// Possible atributes
 		//this.model = model;
 
@@ -262,20 +333,22 @@ class Projectile {
 			this.isEnemyProjectile = true;
 			this.isPlayerProjectile = false;
 			this.color = [1.0,0.2,0.1];
-			this.collision_mask = 1;
+			this.collision_mask = 2;
 		}
 		else if(isFrom == "p"){		// projectile shooted by player
 			this.isEnemyProjectile = false;
 			this.isPlayerProjectile = true;
 			this.color = [0.0,0.2,1.0];
-			this.collision_mask = 2;
+			this.collision_mask = 1;
 		}
 	}
 	collided(object) {
 		if(this.isPlayerProjectile && object.isEnemy  ||
 			this.isEnemyProjectile && object.isPlayer || object.isWall){
 			this.remove();
+			return true;
 		}
+		return false;
 	}
 	remove(){
 		this.shouldRemove = true;
@@ -288,7 +361,6 @@ class Projectile {
 		this.lifetime -= delta;
 		if(this.lifetime < 0){
 			this.remove();
-			print("fizzle!");
 			return;
 		}
 		
